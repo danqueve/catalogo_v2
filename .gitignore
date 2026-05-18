@@ -1,0 +1,11 @@
+# Configuración local (credenciales — crear config.php en el servidor)
+config/config.php
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
