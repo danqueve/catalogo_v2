@@ -1,0 +1,15 @@
+# Imágenes subidas por usuarios (no se versionan)
+public/uploads/productos/*
+!public/uploads/productos/.gitkeep
+
+# Configuración local (credenciales)
+config/config.php
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp

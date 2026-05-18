@@ -1,0 +1,9 @@
+Options -Indexes
+
+# Redirigir raíz al directorio público
+RewriteEngine On
+RewriteCond %{REQUEST_URI} ^/cat2/?$
+RewriteRule ^ /cat2/public/ [R=301,L]
+
+# Bloquear acceso directo a directorios sensibles
+RewriteRule ^(src|config|sql)(/.*)?$ - [F,L]
