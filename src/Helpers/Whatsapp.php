@@ -5,6 +5,17 @@ namespace Helpers;
 class Whatsapp
 {
     /**
+     * Construye la URL wa.me para compartir una categoría completa.
+     */
+    public static function urlCategoria(string $nombre, string $slug): string
+    {
+        $url   = BASE_URL . '/categoria.php?slug=' . urlencode($slug);
+        $texto = '🛍️ *' . $nombre . "*\n\nMirá todos los productos de esta categoría:\n🔗 " . $url;
+        $base  = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
+        return $base . '?text=' . rawurlencode($texto);
+    }
+
+    /**
      * Construye la URL wa.me con el texto del artículo pre-formateado.
      */
     public static function urlArticulo(array $articulo, string $categoriaSlug): string

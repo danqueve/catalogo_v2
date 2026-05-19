@@ -2,6 +2,7 @@
 require_once __DIR__ . '/src/bootstrap.php';
 
 use Models\Categoria;
+use Helpers\Whatsapp;
 
 $categoriaModel = new Categoria();
 $categorias     = $categoriaModel->obtenerActivas();
@@ -75,6 +76,28 @@ foreach ($categorias as $cat) {
       transition:transform .15s ease,box-shadow .15s ease;
     }
     .promo-card:hover .promo-btn{transform:scale(1.05);box-shadow:0 4px 18px rgba(0,0,0,.22)}
+
+    /* ── Botón compartir WhatsApp en cards de categoría ── */
+    .card-cat-wrap { position: relative; }
+    .btn-wa-cat {
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: #25D366;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+      z-index: 2;
+      transition: transform .15s ease, box-shadow .15s ease;
+      text-decoration: none;
+    }
+    .btn-wa-cat:hover {
+      transform: scale(1.12);
+      box-shadow: 0 4px 14px rgba(37,211,102,.45);
+      color: #fff;
+    }
+    .btn-wa-cat:active { transform: scale(.95); }
   </style>
 </head>
 <body>
@@ -119,33 +142,43 @@ foreach ($categorias as $cat) {
   <?php else: ?>
     <div class="row g-3">
       <?php foreach ($categorias as $cat): ?>
+        <?php $waUrl = Whatsapp::urlCategoria($cat['nombre'], $cat['slug']); ?>
         <div class="col-6 col-md-4 col-lg-3">
-          <a href="categoria.php?slug=<?= htmlspecialchars($cat['slug'], ENT_QUOTES, 'UTF-8') ?>"
-             class="card-ios">
-            <div class="ratio-4-5">
-              <?php if (!empty($cat['imagen'])): ?>
-                <img src="uploads/productos/<?= htmlspecialchars($cat['imagen'], ENT_QUOTES, 'UTF-8') ?>"
-                     alt="<?= htmlspecialchars($cat['nombre'], ENT_QUOTES, 'UTF-8') ?>"
-                     loading="lazy">
-              <?php else: ?>
-                <!-- Placeholder degradado cuando no hay imagen -->
-                <div style="width:100%;height:100%;
-                            background:linear-gradient(135deg,#e8eaf6 0%,#c5cae9 100%);
-                            display:flex;align-items:center;justify-content:center;">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
-                       stroke="#9fa8da" stroke-width="1.5">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <path d="M21 15l-5-5L5 21"/>
-                  </svg>
-                </div>
-              <?php endif; ?>
-            </div>
-            <div class="card-cat-body d-flex justify-content-between align-items-center">
-              <span class="cat-name"><?= htmlspecialchars($cat['nombre'], ENT_QUOTES, 'UTF-8') ?></span>
-              <span class="cat-arrow">›</span>
-            </div>
-          </a>
+          <div class="card-cat-wrap">
+            <a href="categoria.php?slug=<?= htmlspecialchars($cat['slug'], ENT_QUOTES, 'UTF-8') ?>"
+               class="card-ios">
+              <div class="ratio-4-5">
+                <?php if (!empty($cat['imagen'])): ?>
+                  <img src="uploads/productos/<?= htmlspecialchars($cat['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+                       alt="<?= htmlspecialchars($cat['nombre'], ENT_QUOTES, 'UTF-8') ?>"
+                       loading="lazy">
+                <?php else: ?>
+                  <div style="width:100%;height:100%;
+                              background:linear-gradient(135deg,#e8eaf6 0%,#c5cae9 100%);
+                              display:flex;align-items:center;justify-content:center;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+                         stroke="#9fa8da" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <path d="M21 15l-5-5L5 21"/>
+                    </svg>
+                  </div>
+                <?php endif; ?>
+              </div>
+              <div class="card-cat-body d-flex justify-content-between align-items-center">
+                <span class="cat-name"><?= htmlspecialchars($cat['nombre'], ENT_QUOTES, 'UTF-8') ?></span>
+                <span class="cat-arrow">›</span>
+              </div>
+            </a>
+            <a href="<?= htmlspecialchars($waUrl, ENT_QUOTES, 'UTF-8') ?>"
+               class="btn-wa-cat"
+               target="_blank" rel="noopener noreferrer"
+               title="Compartir <?= htmlspecialchars($cat['nombre'], ENT_QUOTES, 'UTF-8') ?> por WhatsApp">
+              <svg width="18" height="18" viewBox="0 0 32 32" fill="currentColor">
+                <path d="M16 2C8.27 2 2 8.27 2 16c0 2.44.66 4.82 1.9 6.9L2 30l7.34-1.87A13.94 13.94 0 0 0 16 30c7.73 0 14-6.27 14-14S23.73 2 16 2zm7.6 19.4c-.32.9-1.87 1.72-2.58 1.82-.66.1-1.5.14-2.42-.15-.56-.18-1.28-.42-2.2-.82-3.88-1.68-6.42-5.6-6.62-5.86-.2-.26-1.6-2.13-1.6-4.06 0-1.93 1.01-2.88 1.37-3.27.36-.39.78-.49 1.04-.49.26 0 .52 0 .75.01.24.01.56-.09.88.67.32.78 1.1 2.7 1.2 2.9.1.2.16.43.03.69-.13.26-.2.42-.39.65-.2.23-.41.51-.59.69-.19.18-.39.38-.17.74.22.36.99 1.63 2.13 2.64 1.46 1.3 2.69 1.7 3.05 1.89.36.19.57.16.78-.1.21-.26.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.1 .99 2.46 1.17.36.18.6.27.69.42.09.16.09.9-.23 1.8z"/>
+              </svg>
+            </a>
+          </div>
         </div>
       <?php endforeach; ?>
     </div>
