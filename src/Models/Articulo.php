@@ -112,4 +112,42 @@ class Articulo
         $stmt = $this->db->prepare('DELETE FROM articulos WHERE id = ?');
         return $stmt->execute([$id]);
     }
+
+    public function contarTodos(int $categoriaId = 0, string $busqueda = ''): int
+    {
+        $where = '';
+        $params = [];
+        if ($categoriaId) { $where .= ' AND a.categoria_id = ?'; $params[] = $categoriaId; }
+        if ($busqueda)    { $where .= ' AND a.nombre LIKE ?';    $params[] = "%$busqueda%"; }
+
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) FROM articulos a WHERE 1=1 $where"
+        );
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function obtenerPaginados(int $limit, int $offset, int $categoriaId = 0, string $busqueda = ''): array
+    {
+        $where = '';
+        $params = [];
+        if ($categoriaId) { $where .= ' AND a.categoria_id = ?'; $params[] = $categoriaId; }
+        if ($busqueda)    { $where .= ' AND a.nombre LIKE ?';    $params[] = "%$busqueda%"; }
+        $params[] = $limit;
+        $params[] = $offset;
+
+        $stmt = $this->db->prepare(
+            "SELECT a.id, a.nombre, a.imagen, a.activo, a.creado_en,
+                    a.cuotas_sem_cant, a.cuotas_sem_monto,
+                    a.cuotas_mes_cant, a.cuotas_mes_monto,
+                    c.nombre AS categoria_nombre
+             FROM articulos a
+             JOIN categorias c ON c.id = a.categoria_id
+             WHERE 1=1 $where
+             ORDER BY a.creado_en DESC, a.id DESC
+             LIMIT ? OFFSET ?"
+        );
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
 }
