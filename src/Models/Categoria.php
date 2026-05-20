@@ -17,8 +17,17 @@ class Categoria
     public function obtenerActivas(): array
     {
         $stmt = $this->db->query(
+            'SELECT id, nombre, slug, imagen, fijo FROM categorias
+             WHERE activo = 1 ORDER BY fijo DESC, creado_en DESC, id DESC'
+        );
+        return $stmt->fetchAll();
+    }
+
+    public function obtenerFijas(): array
+    {
+        $stmt = $this->db->query(
             'SELECT id, nombre, slug, imagen FROM categorias
-             WHERE activo = 1 ORDER BY creado_en DESC, id DESC'
+             WHERE activo = 1 AND fijo = 1 ORDER BY creado_en DESC, id DESC'
         );
         return $stmt->fetchAll();
     }
@@ -26,8 +35,8 @@ class Categoria
     public function obtenerTodas(): array
     {
         $stmt = $this->db->query(
-            'SELECT id, nombre, slug, imagen, activo, creado_en FROM categorias
-             ORDER BY creado_en DESC, id DESC'
+            'SELECT id, nombre, slug, imagen, activo, fijo, creado_en FROM categorias
+             ORDER BY fijo DESC, creado_en DESC, id DESC'
         );
         return $stmt->fetchAll();
     }
@@ -50,27 +59,27 @@ class Categoria
         return $stmt->fetch();
     }
 
-    public function crear(string $nombre, string $slug, ?string $imagen): int
+    public function crear(string $nombre, string $slug, ?string $imagen, int $fijo = 0): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO categorias (nombre, slug, imagen) VALUES (?, ?, ?)'
+            'INSERT INTO categorias (nombre, slug, imagen, fijo) VALUES (?, ?, ?, ?)'
         );
-        $stmt->execute([$nombre, $slug, $imagen]);
+        $stmt->execute([$nombre, $slug, $imagen, $fijo]);
         return (int) $this->db->lastInsertId();
     }
 
-    public function actualizar(int $id, string $nombre, string $slug, ?string $imagen, int $activo): bool
+    public function actualizar(int $id, string $nombre, string $slug, ?string $imagen, int $activo, int $fijo = 0): bool
     {
         if ($imagen !== null) {
             $stmt = $this->db->prepare(
-                'UPDATE categorias SET nombre=?, slug=?, imagen=?, activo=? WHERE id=?'
+                'UPDATE categorias SET nombre=?, slug=?, imagen=?, activo=?, fijo=? WHERE id=?'
             );
-            return $stmt->execute([$nombre, $slug, $imagen, $activo, $id]);
+            return $stmt->execute([$nombre, $slug, $imagen, $activo, $fijo, $id]);
         }
         $stmt = $this->db->prepare(
-            'UPDATE categorias SET nombre=?, slug=?, activo=? WHERE id=?'
+            'UPDATE categorias SET nombre=?, slug=?, activo=?, fijo=? WHERE id=?'
         );
-        return $stmt->execute([$nombre, $slug, $activo, $id]);
+        return $stmt->execute([$nombre, $slug, $activo, $fijo, $id]);
     }
 
     public function eliminar(int $id): bool

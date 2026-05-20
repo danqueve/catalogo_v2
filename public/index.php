@@ -6,16 +6,8 @@ use Helpers\Whatsapp;
 
 $categoriaModel = new Categoria();
 $categorias     = $categoriaModel->obtenerActivas();
-
-$meses = ['enero','febrero','marzo','abril','mayo','junio',
-          'julio','agosto','septiembre','octubre','noviembre','diciembre'];
-$mesActual = $meses[(int)date('n') - 1];
-
-$promoSlug = 'promos-del-mes';
-$hayPromos = false;
-foreach ($categorias as $cat) {
-    if ($cat['slug'] === $promoSlug) { $hayPromos = true; break; }
-}
+$fijas          = array_filter($categorias, fn($c) => !empty($c['fijo']));
+$resto          = array_filter($categorias, fn($c) => empty($c['fijo']));
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -77,6 +69,41 @@ foreach ($categorias as $cat) {
     }
     .promo-card:hover .promo-btn{transform:scale(1.05);box-shadow:0 4px 18px rgba(0,0,0,.22)}
 
+    /* ── Categorías fijas (destacadas) ── */
+    .fijas-wrap{max-width:960px;margin:0 auto;padding:.75rem .75rem 0}
+    .fijas-grid{display:grid;gap:.75rem;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}
+    .fija-card{
+      position:relative;
+      border-radius:16px;
+      overflow:hidden;
+      display:flex;align-items:flex-end;
+      min-height:140px;
+      text-decoration:none;
+      box-shadow:0 4px 18px rgba(0,0,0,.18);
+      transition:transform .2s cubic-bezier(.25,.46,.45,.94),box-shadow .2s;
+    }
+    .fija-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.26);}
+    .fija-card:active{transform:scale(.98);}
+    .fija-card-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+    .fija-card-overlay{
+      position:absolute;inset:0;
+      background:linear-gradient(to top,rgba(0,0,0,.68) 0%,rgba(0,0,0,.08) 60%,transparent 100%);
+    }
+    .fija-card-body{position:relative;z-index:1;padding:.75rem 1rem;width:100%;}
+    .fija-card-nombre{color:#fff;font-weight:700;font-size:1rem;line-height:1.2;}
+    .fija-card-arrow{
+      display:inline-flex;align-items:center;gap:.35rem;
+      background:rgba(255,255,255,.18);backdrop-filter:blur(6px);
+      color:#fff;border-radius:999px;padding:.25rem .7rem;
+      font-size:.78rem;font-weight:600;margin-top:.4rem;
+    }
+    /* placeholder sin imagen */
+    .fija-card-placeholder{
+      position:absolute;inset:0;
+      background:linear-gradient(135deg,#FF6B00 0%,#FF3B30 100%);
+    }
+
     /* ── Botón compartir WhatsApp en cards de categoría ── */
     .card-cat-wrap { position: relative; }
     .btn-wa-cat {
@@ -110,28 +137,59 @@ foreach ($categorias as $cat) {
   </span>
 </nav>
 
-<!-- Banner Promos -->
-<div class="promo-banner-wrap">
-  <a href="categoria.php?slug=<?= $promoSlug ?>" class="promo-card">
-    <p class="promo-mes">Promociones · <?= ucfirst($mesActual) ?> <?= date('Y') ?></p>
-    <h2 class="promo-titulo">Ofertas del Mes</h2>
-    <p class="promo-sub">Cuotas especiales y descuentos en productos seleccionados</p>
-    <span class="promo-btn">
-      Ver ofertas
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M12 5l7 7-7 7"/>
-      </svg>
-    </span>
-  </a>
+<!-- Categorías fijas / destacadas -->
+<?php if (!empty($fijas)): ?>
+<div class="fijas-wrap">
+  <div class="fijas-grid">
+    <?php foreach ($fijas as $cat): ?>
+      <?php $waUrl = Whatsapp::urlCategoria($cat['nombre'], $cat['slug']); ?>
+      <div style="position:relative;">
+        <a href="categoria.php?slug=<?= htmlspecialchars($cat['slug'], ENT_QUOTES, 'UTF-8') ?>"
+           class="fija-card">
+          <?php if (!empty($cat['imagen'])): ?>
+            <img src="uploads/productos/<?= htmlspecialchars($cat['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+                 class="fija-card-img" alt="<?= htmlspecialchars($cat['nombre'], ENT_QUOTES, 'UTF-8') ?>"
+                 loading="lazy">
+          <?php else: ?>
+            <div class="fija-card-placeholder"></div>
+          <?php endif; ?>
+          <div class="fija-card-overlay"></div>
+          <div class="fija-card-body">
+            <div class="fija-card-nombre"><?= htmlspecialchars($cat['nombre'], ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="fija-card-arrow">
+              Ver productos
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </div>
+        </a>
+        <a href="<?= htmlspecialchars($waUrl, ENT_QUOTES, 'UTF-8') ?>"
+           class="btn-wa-cat" style="top:10px;right:10px;"
+           target="_blank" rel="noopener noreferrer"
+           title="Compartir por WhatsApp">
+          <svg width="18" height="18" viewBox="0 0 32 32" fill="currentColor">
+            <path d="M16 2C8.27 2 2 8.27 2 16c0 2.44.66 4.82 1.9 6.9L2 30l7.34-1.87A13.94 13.94 0 0 0 16 30c7.73 0 14-6.27 14-14S23.73 2 16 2zm7.6 19.4c-.32.9-1.87 1.72-2.58 1.82-.66.1-1.5.14-2.42-.15-.56-.18-1.28-.42-2.2-.82-3.88-1.68-6.42-5.6-6.62-5.86-.2-.26-1.6-2.13-1.6-4.06 0-1.93 1.01-2.88 1.37-3.27.36-.39.78-.49 1.04-.49.26 0 .52 0 .75.01.24.01.56-.09.88.67.32.78 1.1 2.7 1.2 2.9.1.2.16.43.03.69-.13.26-.2.42-.39.65-.2.23-.41.51-.59.69-.19.18-.39.38-.17.74.22.36.99 1.63 2.13 2.64 1.46 1.3 2.69 1.7 3.05 1.89.36.19.57.16.78-.1.21-.26.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.1 .99 2.46 1.17.36.18.6.27.69.42.09.16.09.9-.23 1.8z"/>
+          </svg>
+        </a>
+      </div>
+    <?php endforeach; ?>
+  </div>
 </div>
+<?php endif; ?>
 
 <!-- Contenido -->
 <main class="container-fluid px-3 py-4" style="max-width:960px;margin:0 auto;">
 
-  <h1 class="section-title">Categorías</h1>
-  <p class="section-subtitle">Seleccioná una categoría para ver los productos</p>
+  <?php if (!empty($fijas) && !empty($resto)): ?>
+    <h1 class="section-title">Todas las categorías</h1>
+  <?php elseif (empty($fijas)): ?>
+    <h1 class="section-title">Categorías</h1>
+    <p class="section-subtitle">Seleccioná una categoría para ver los productos</p>
+  <?php endif; ?>
 
-  <?php if (empty($categorias)): ?>
+  <?php $mostrar = !empty($fijas) ? $resto : $categorias; ?>
+  <?php if (empty($mostrar) && empty($fijas)): ?>
     <div class="empty-state">
       <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <rect x="2" y="3" width="20" height="14" rx="2"/>
@@ -139,9 +197,9 @@ foreach ($categorias as $cat) {
       </svg>
       <p class="mt-2">Aún no hay categorías disponibles.</p>
     </div>
-  <?php else: ?>
+  <?php elseif (!empty($mostrar)): ?>
     <div class="row g-3">
-      <?php foreach ($categorias as $cat): ?>
+      <?php foreach ($mostrar as $cat): ?>
         <?php $waUrl = Whatsapp::urlCategoria($cat['nombre'], $cat['slug']); ?>
         <div class="col-6 col-md-4 col-lg-3">
           <div class="card-cat-wrap">

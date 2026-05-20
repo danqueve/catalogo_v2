@@ -80,7 +80,7 @@ $paginaActual = basename($_SERVER['PHP_SELF']);
         Artículos
       </a>
       <hr style="border-color:var(--border);">
-      <a href="../public/index.php" target="_blank"
+      <a href="<?= BASE_URL ?>" target="_blank"
          class="nav-link" style="font-size:.82rem;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" class="me-2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>

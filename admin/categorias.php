@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($accion === 'crear') {
             $nombre = trim($_POST['nombre'] ?? '');
             $slug   = trim($_POST['slug']   ?? '') ?: Categoria::slugify($nombre);
+            $fijo   = isset($_POST['fijo']) ? 1 : 0;
             $imagen = null;
 
             if (empty($nombre)) {
@@ -31,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!empty($_FILES['imagen']['name'])) {
                         $imagen = Upload::imagen($_FILES['imagen'], UPLOAD_DIR);
                     }
-                    $catModel->crear($nombre, $slug, $imagen);
+                    $catModel->crear($nombre, $slug, $imagen, $fijo);
                     $msg = 'Categoría creada correctamente.';
                 } catch (\RuntimeException $e) {
                     $msg = $e->getMessage(); $msgTipo = 'danger';
@@ -45,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nombre = trim($_POST['nombre'] ?? '');
             $slug   = trim($_POST['slug']   ?? '') ?: Categoria::slugify($nombre);
             $activo = (int)($_POST['activo'] ?? 1);
+            $fijo   = isset($_POST['fijo']) ? 1 : 0;
             $imagen = null;
 
             if (!$id || empty($nombre)) {
@@ -57,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($vieja && $vieja['imagen']) Upload::borrar(UPLOAD_DIR, $vieja['imagen']);
                         $imagen = Upload::imagen($_FILES['imagen'], UPLOAD_DIR);
                     }
-                    $catModel->actualizar($id, $nombre, $slug, $imagen, $activo);
+                    $catModel->actualizar($id, $nombre, $slug, $imagen, $activo, $fijo);
                     $msg = 'Categoría actualizada.';
                 } catch (\RuntimeException $e) {
                     $msg = $e->getMessage(); $msgTipo = 'danger';
@@ -134,6 +136,16 @@ require 'partials/header.php';
       </div>
       <?php endif; ?>
       <div class="col-12">
+        <div class="form-check mt-1">
+          <input class="form-check-input" type="checkbox" name="fijo" id="fijoCheck" value="1"
+                 <?= ($editando['fijo'] ?? 0) ? 'checked' : '' ?>>
+          <label class="form-check-label fw-semibold" for="fijoCheck" style="font-size:.85rem;">
+            Fijar en inicio
+            <small class="text-muted fw-normal ms-1">— aparece destacada arriba del catálogo</small>
+          </label>
+        </div>
+      </div>
+      <div class="col-12">
         <label class="form-label fw-semibold" style="font-size:.85rem;">
           Imagen de portada (proporción 4:5 recomendada)
         </label>
@@ -170,12 +182,13 @@ require 'partials/header.php';
         <th>Nombre</th>
         <th>Slug</th>
         <th>Estado</th>
+        <th>Fijo</th>
         <th style="width:140px;">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <?php if (empty($categorias)): ?>
-        <tr><td colspan="5" class="text-center text-muted py-4">Aún no hay categorías.</td></tr>
+        <tr><td colspan="6" class="text-center text-muted py-4">Aún no hay categorías.</td></tr>
       <?php else: ?>
         <?php foreach ($categorias as $c): ?>
           <tr>
@@ -202,6 +215,14 @@ require 'partials/header.php';
               <?php else: ?>
                 <span class="badge" style="background:rgba(255,59,48,.1);color:#c0392b;
                       border-radius:var(--radius-pill);padding:.25rem .6rem;font-size:.75rem;">Inactiva</span>
+              <?php endif; ?>
+            </td>
+            <td>
+              <?php if ($c['fijo']): ?>
+                <span class="badge" style="background:rgba(255,149,0,.15);color:#b35900;
+                      border-radius:var(--radius-pill);padding:.25rem .6rem;font-size:.75rem;">📌 Fija</span>
+              <?php else: ?>
+                <span style="color:var(--text-3);font-size:.8rem;">—</span>
               <?php endif; ?>
             </td>
             <td>
