@@ -43,12 +43,12 @@ function fmt(float $n): string {
         crossorigin="anonymous">
   <link rel="stylesheet" href="assets/css/app.css">
   <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZJ1R8XXVB"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=GT-5D9RBG98"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-BZJ1R8XXVB');
+    gtag('config', 'GT-5D9RBG98');
   </script>
 </head>
 <body>
