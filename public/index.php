@@ -126,6 +126,14 @@ $resto          = array_filter($categorias, fn($c) => empty($c['fijo']));
     }
     .btn-wa-cat:active { transform: scale(.95); }
   </style>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZJ1R8XXVB"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-BZJ1R8XXVB');
+  </script>
 </head>
 <body>
 
