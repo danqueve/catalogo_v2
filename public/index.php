@@ -15,7 +15,18 @@ $resto          = array_filter($categorias, fn($c) => empty($c['fijo']));
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <title>Catálogo</title>
+  <title>Catálogo — Imperio Comercial</title>
+  <meta name="description"         content="Explorá nuestro catálogo de productos con los mejores precios y financiación.">
+  <meta property="og:type"         content="website">
+  <meta property="og:site_name"    content="Imperio Comercial">
+  <meta property="og:title"        content="Catálogo — Imperio Comercial">
+  <meta property="og:description"  content="Explorá nuestro catálogo de productos con los mejores precios y financiación.">
+  <meta property="og:url"          content="<?= BASE_URL ?>">
+  <meta property="og:image"        content="<?= BASE_URL ?>/assets/img/logo.png">
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="Catálogo — Imperio Comercial">
+  <meta name="twitter:description" content="Explorá nuestro catálogo de productos con los mejores precios y financiación.">
+  <meta name="twitter:image"       content="<?= BASE_URL ?>/assets/img/logo.png">
   <link rel="icon" type="image/png" href="assets/img/logo.png">
   <link rel="apple-touch-icon" href="assets/img/logo.png">
   <link rel="stylesheet"

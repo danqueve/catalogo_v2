@@ -24,6 +24,13 @@ if (!$categoria) {
 $articuloModel = new Articulo();
 $articulos     = $articuloModel->obtenerPorCategoria((int)$categoria['id']);
 
+$ogTitle = htmlspecialchars($categoria['nombre'], ENT_QUOTES, 'UTF-8') . ' — Imperio Comercial';
+$ogDesc  = 'Mirá todos los productos de ' . htmlspecialchars($categoria['nombre'], ENT_QUOTES, 'UTF-8') . ' con precios y financiación.';
+$ogUrl   = BASE_URL . '/categoria.php?slug=' . urlencode($categoria['slug']);
+$ogImage = !empty($categoria['imagen'])
+           ? UPLOAD_URL . rawurlencode($categoria['imagen'])
+           : BASE_URL . '/assets/img/logo.png';
+
 function fmt(float $n): string {
     return number_format($n, 0, ',', '.');
 }
@@ -34,7 +41,18 @@ function fmt(float $n): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <title><?= htmlspecialchars($categoria['nombre'], ENT_QUOTES, 'UTF-8') ?> — Catálogo</title>
+  <title><?= $ogTitle ?></title>
+  <meta name="description"         content="<?= $ogDesc ?>">
+  <meta property="og:type"         content="website">
+  <meta property="og:site_name"    content="Imperio Comercial">
+  <meta property="og:title"        content="<?= $ogTitle ?>">
+  <meta property="og:description"  content="<?= $ogDesc ?>">
+  <meta property="og:url"          content="<?= $ogUrl ?>">
+  <meta property="og:image"        content="<?= $ogImage ?>">
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="<?= $ogTitle ?>">
+  <meta name="twitter:description" content="<?= $ogDesc ?>">
+  <meta name="twitter:image"       content="<?= $ogImage ?>">
   <link rel="icon" type="image/png" href="assets/img/logo.png">
   <link rel="apple-touch-icon" href="assets/img/logo.png">
   <link rel="stylesheet"
