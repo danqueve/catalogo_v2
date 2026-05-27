@@ -8,6 +8,13 @@ $categoriaModel = new Categoria();
 $categorias     = $categoriaModel->obtenerActivas();
 $fijas          = array_filter($categorias, fn($c) => !empty($c['fijo']));
 $resto          = array_filter($categorias, fn($c) => empty($c['fijo']));
+
+// Imagen OG: primera categoría con imagen (fija primero, sino cualquiera)
+$ogImageCat = null;
+foreach (array_merge(array_values($fijas), array_values($resto)) as $c) {
+    if (!empty($c['imagen'])) { $ogImageCat = $c['imagen']; break; }
+}
+$ogImage = $ogImageCat ? UPLOAD_URL . rawurlencode($ogImageCat) : null;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -22,11 +29,13 @@ $resto          = array_filter($categorias, fn($c) => empty($c['fijo']));
   <meta property="og:title"        content="Catálogo — Imperio Comercial">
   <meta property="og:description"  content="Explorá nuestro catálogo de productos con los mejores precios y financiación.">
   <meta property="og:url"          content="<?= BASE_URL ?>">
-  <meta property="og:image"        content="<?= BASE_URL ?>/assets/img/logo.png">
+  <?php if ($ogImage): ?>
+  <meta property="og:image"        content="<?= htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8') ?>">
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="Catálogo — Imperio Comercial">
   <meta name="twitter:description" content="Explorá nuestro catálogo de productos con los mejores precios y financiación.">
-  <meta name="twitter:image"       content="<?= BASE_URL ?>/assets/img/logo.png">
+  <meta name="twitter:image"       content="<?= htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8') ?>">
+  <?php endif; ?>
   <link rel="icon" type="image/png" href="assets/img/logo.png">
   <link rel="apple-touch-icon" href="assets/img/logo.png">
   <link rel="stylesheet"
