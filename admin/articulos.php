@@ -229,7 +229,7 @@ require 'partials/header.php';
         <img id="imgPreview" src="" alt="Preview">
         <?php if ($editando && $editando['imagen']): ?>
           <div class="mt-2 d-flex align-items-center gap-2">
-            <img src="../public/uploads/productos/<?= htmlspecialchars($editando['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+            <img src="<?= htmlspecialchars(UPLOAD_URL . rawurlencode($editando['imagen']), ENT_QUOTES, 'UTF-8') ?>"
                  class="img-thumb" alt="Imagen actual">
             <small class="text-muted">Imagen actual</small>
           </div>
@@ -432,7 +432,7 @@ require 'partials/header.php';
                 <?php endif; ?>
               </td>
               <td>
-                <img src="../public/uploads/productos/<?= htmlspecialchars($a['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+                <img src="<?= htmlspecialchars(UPLOAD_URL . rawurlencode($a['imagen']), ENT_QUOTES, 'UTF-8') ?>"
                      class="img-thumb" alt="">
               </td>
               <td class="fw-semibold"><?= htmlspecialchars($a['nombre'], ENT_QUOTES, 'UTF-8') ?></td>

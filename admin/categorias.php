@@ -199,7 +199,7 @@ require 'partials/header.php';
         <img id="imgPreview" src="" alt="Preview">
         <?php if ($editando && $editando['imagen']): ?>
           <div class="mt-2">
-            <img src="../public/uploads/productos/<?= htmlspecialchars($editando['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+            <img src="<?= htmlspecialchars(UPLOAD_URL . rawurlencode($editando['imagen']), ENT_QUOTES, 'UTF-8') ?>"
                  class="img-thumb" alt="Imagen actual">
             <small class="text-muted d-block mt-1">Imagen actual. Subir nueva para reemplazar.</small>
           </div>
@@ -287,7 +287,7 @@ require 'partials/header.php';
             </td>
             <td>
               <?php if ($c['imagen']): ?>
-                <img src="../public/uploads/productos/<?= htmlspecialchars($c['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+                <img src="<?= htmlspecialchars(UPLOAD_URL . rawurlencode($c['imagen']), ENT_QUOTES, 'UTF-8') ?>"
                      class="img-thumb" alt="">
               <?php else: ?>
                 <div class="img-thumb d-flex align-items-center justify-content-center"
