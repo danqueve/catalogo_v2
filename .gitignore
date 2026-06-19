@@ -9,3 +9,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Carpeta de uploads en raíz
+uploads/

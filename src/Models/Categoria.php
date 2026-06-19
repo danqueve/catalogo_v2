@@ -59,14 +59,17 @@ class Categoria
         return $stmt->fetch();
     }
 
-    public function crear(string $nombre, string $slug, ?string $imagen, int $fijo = 0): int
+    public function crear(string $nombre, string $slug, ?string $imagen, int $fijo = 0, ?int $orden = null): int
     {
-        // Obtener el máximo orden actual para poner la nueva al final
-        $maxOrden = (int) $this->db->query('SELECT COALESCE(MAX(orden),0) FROM categorias')->fetchColumn();
+        if ($orden === null) {
+            // Obtener el máximo orden actual para poner la nueva al final
+            $maxOrden = (int) $this->db->query('SELECT COALESCE(MAX(orden),0) FROM categorias')->fetchColumn();
+            $orden = $maxOrden + 1;
+        }
         $stmt = $this->db->prepare(
             'INSERT INTO categorias (nombre, slug, imagen, fijo, orden) VALUES (?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$nombre, $slug, $imagen, $fijo, $maxOrden + 1]);
+        $stmt->execute([$nombre, $slug, $imagen, $fijo, $orden]);
         return (int) $this->db->lastInsertId();
     }
 
@@ -98,11 +101,34 @@ class Categoria
     }
 
     /**
+     * Normaliza el orden de las categorías para que sean consecutivos y sin duplicados
+     */
+    public function normalizarOrdenes(): void
+    {
+        // Normalizar para fijas (fijo = 1)
+        $stmt = $this->db->query('SELECT id FROM categorias WHERE fijo = 1 ORDER BY orden ASC, creado_en DESC, id DESC');
+        $fijas = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $upd = $this->db->prepare('UPDATE categorias SET orden = ? WHERE id = ?');
+        foreach ($fijas as $index => $id) {
+            $upd->execute([$index + 1, $id]);
+        }
+
+        // Normalizar para normales (fijo = 0)
+        $stmt = $this->db->query('SELECT id FROM categorias WHERE fijo = 0 ORDER BY orden ASC, creado_en DESC, id DESC');
+        $normales = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($normales as $index => $id) {
+            $upd->execute([$index + 1, $id]);
+        }
+    }
+
+    /**
      * Intercambia el orden de dos categorías (para mover arriba/abajo)
      */
     public function intercambiarOrden(int $idA, int $idB): void
     {
-        $stmt = $this->db->prepare('SELECT id, orden FROM categorias WHERE id IN (?,?) ORDER BY orden ASC, id ASC');
+        $this->normalizarOrdenes();
+
+        $stmt = $this->db->prepare('SELECT id, orden FROM categorias WHERE id IN (?,?)');
         $stmt->execute([$idA, $idB]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (count($rows) < 2) return;

@@ -47,7 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $imagen,
                         $fn('precio_contado'),
                         $fi('cuotas_sem_cant'), $fn('cuotas_sem_monto'),
-                        $fi('cuotas_mes_cant'), $fn('cuotas_mes_monto')
+                        $fi('cuotas_mes_cant'), $fn('cuotas_mes_monto'),
+                        $fi('orden')
                     );
                     $msg = 'Artículo creado correctamente.';
                 } catch (\RuntimeException $e) {
@@ -80,7 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $fn('precio_contado'),
                         $fi('cuotas_sem_cant'), $fn('cuotas_sem_monto'),
                         $fi('cuotas_mes_cant'), $fn('cuotas_mes_monto'),
-                        $activo
+                        $activo,
+                        $fi('orden')
                     );
                     $msg = 'Artículo actualizado.';
                 } catch (\RuntimeException $e) {
@@ -118,6 +120,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $artModel->intercambiarOrden($id, $idNext);
                 $msg = 'Orden actualizado.';
             }
+        }
+
+        /* Guardar ordenes en lote */
+        elseif ($accion === 'guardar_ordenes_lote') {
+            $ordenes = $_POST['ordenes'] ?? [];
+            foreach ($ordenes as $id => $val) {
+                $artModel->actualizarOrden((int)$id, (int)$val);
+            }
+            $msg = 'Órdenes de artículos actualizados.';
         }
     }
 }
@@ -238,6 +249,18 @@ require 'partials/header.php';
         </div>
       </div>
 
+      <!-- Orden de visualización -->
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" style="font-size:.85rem;">
+          Orden de visualización
+          <small class="text-muted fw-normal ms-1">— número más bajo aparece primero</small>
+        </label>
+        <input type="number" name="orden" class="form-control form-control-ios"
+               min="1" step="1"
+               value="<?= $editando ? (int)$editando['orden'] : '' ?>"
+               placeholder="<?= $editando ? '' : 'Ej: 1 (Dejar vacío para colocar al final)' ?>">
+      </div>
+
       <!-- Cuotas Semanales -->
       <div class="col-12">
         <p class="fw-semibold mb-2" style="font-size:.85rem;">Cuotas semanales</p>
@@ -325,12 +348,34 @@ require 'partials/header.php';
     </form>
   </div>
 
+  <!-- Formulario oculto para guardar orden en lote -->
+  <form id="loteForm" method="POST">
+    <?= Auth::campoCSRF() ?>
+    <input type="hidden" name="accion" value="guardar_ordenes_lote">
+  </form>
+
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="h6 fw-bold mb-0">Lista de Artículos</h2>
+    <?php if ($filtroCategoria > 0 && !empty($articulos)): ?>
+      <button type="submit" form="loteForm" class="btn-ios-primary btn-sm" style="padding:.4rem .9rem; font-size:.82rem;">Guardar Orden</button>
+    <?php endif; ?>
+  </div>
+
+  <?php if (!$filtroCategoria): ?>
+    <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center gap-2" style="font-size:.8rem; border-radius: 12px; background: rgba(0, 122, 255, 0.08); border: none; color: #0056b3;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+      <span>Para ordenar y reorganizar los artículos, por favor selecciona una categoría específica en el filtro.</span>
+    </div>
+  <?php endif; ?>
+
   <!-- Tabla -->
   <div style="overflow-x:auto;">
     <table class="table table-hover mb-0" style="min-width:600px;">
       <thead>
         <tr>
-          <th style="width:60px;">Orden</th>
+          <th style="width:<?= $filtroCategoria > 0 ? '90px' : '60px' ?>;">Orden</th>
           <th>Imagen</th>
           <th>Nombre</th>
           <th>Categoría</th>
@@ -351,33 +396,40 @@ require 'partials/header.php';
             ?>
             <tr>
               <td>
-                <div class="d-flex flex-column align-items-center gap-1">
-                  <span class="fw-bold" style="font-size:.8rem;color:var(--text-2);"><?= (int)$a['orden'] ?></span>
-                  <div class="d-flex gap-1">
-                    <?php if ($prevId): ?>
-                      <form method="POST" class="m-0">
-                        <?= Auth::campoCSRF() ?>
-                        <input type="hidden" name="accion" value="mover_arriba">
-                        <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
-                        <input type="hidden" name="id_prev" value="<?= (int)$prevId ?>">
-                        <button type="submit" class="btn-order-arrow" title="Mover arriba">↑</button>
-                      </form>
-                    <?php else: ?>
-                      <span class="btn-order-arrow btn-order-arrow--disabled">↑</span>
-                    <?php endif; ?>
-                    <?php if ($nextId): ?>
-                      <form method="POST" class="m-0">
-                        <?= Auth::campoCSRF() ?>
-                        <input type="hidden" name="accion" value="mover_abajo">
-                        <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
-                        <input type="hidden" name="id_next" value="<?= (int)$nextId ?>">
-                        <button type="submit" class="btn-order-arrow" title="Mover abajo">↓</button>
-                      </form>
-                    <?php else: ?>
-                      <span class="btn-order-arrow btn-order-arrow--disabled">↓</span>
-                    <?php endif; ?>
+                <?php if ($filtroCategoria > 0): ?>
+                  <div class="d-flex flex-column align-items-center gap-1">
+                    <input type="number" form="loteForm" name="ordenes[<?= (int)$a['id'] ?>]" value="<?= (int)$a['orden'] ?>" 
+                           class="form-control form-control-ios form-control-sm text-center" 
+                           style="width:55px; padding:2px; font-size:.8rem; font-weight:bold; margin-bottom: 2px;"
+                           min="1" step="1">
+                    <div class="d-flex gap-1">
+                      <?php if ($prevId): ?>
+                        <form method="POST" class="m-0">
+                          <?= Auth::campoCSRF() ?>
+                          <input type="hidden" name="accion" value="mover_arriba">
+                          <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+                          <input type="hidden" name="id_prev" value="<?= (int)$prevId ?>">
+                          <button type="submit" class="btn-order-arrow" title="Mover arriba">↑</button>
+                        </form>
+                      <?php else: ?>
+                        <span class="btn-order-arrow btn-order-arrow--disabled">↑</span>
+                      <?php endif; ?>
+                      <?php if ($nextId): ?>
+                        <form method="POST" class="m-0">
+                          <?= Auth::campoCSRF() ?>
+                          <input type="hidden" name="accion" value="mover_abajo">
+                          <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+                          <input type="hidden" name="id_next" value="<?= (int)$nextId ?>">
+                          <button type="submit" class="btn-order-arrow" title="Mover abajo">↓</button>
+                        </form>
+                      <?php else: ?>
+                        <span class="btn-order-arrow btn-order-arrow--disabled">↓</span>
+                      <?php endif; ?>
+                    </div>
                   </div>
-                </div>
+                <?php else: ?>
+                  <span class="fw-bold text-muted" style="font-size:.8rem;" title="Filtra por una categoría para ordenar"><?= (int)$a['orden'] ?></span>
+                <?php endif; ?>
               </td>
               <td>
                 <img src="../public/uploads/productos/<?= htmlspecialchars($a['imagen'], ENT_QUOTES, 'UTF-8') ?>"

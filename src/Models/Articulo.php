@@ -59,12 +59,16 @@ class Articulo
         int $categoriaId, string $nombre, ?string $descripcion, string $imagen,
         ?float $precioContado,
         ?int $cuotasSemCant, ?float $cuotasSemMonto,
-        ?int $cuotasMesCant, ?float $cuotasMesMonto
+        ?int $cuotasMesCant, ?float $cuotasMesMonto,
+        ?int $orden = null
     ): int {
-        // Obtener el máximo orden dentro de la misma categoría
-        $stmt = $this->db->prepare('SELECT COALESCE(MAX(orden),0) FROM articulos WHERE categoria_id = ?');
-        $stmt->execute([$categoriaId]);
-        $maxOrden = (int) $stmt->fetchColumn();
+        if ($orden === null) {
+            // Obtener el máximo orden dentro de la misma categoría
+            $stmt = $this->db->prepare('SELECT COALESCE(MAX(orden),0) FROM articulos WHERE categoria_id = ?');
+            $stmt->execute([$categoriaId]);
+            $maxOrden = (int) $stmt->fetchColumn();
+            $orden = $maxOrden + 1;
+        }
 
         $stmt = $this->db->prepare(
             'INSERT INTO articulos
@@ -75,7 +79,7 @@ class Articulo
         $stmt->execute([
             $categoriaId, $nombre, $descripcion, $imagen, $precioContado,
             $cuotasSemCant, $cuotasSemMonto, $cuotasMesCant, $cuotasMesMonto,
-            $maxOrden + 1
+            $orden
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -85,8 +89,35 @@ class Articulo
         ?string $imagen, ?float $precioContado,
         ?int $cuotasSemCant, ?float $cuotasSemMonto,
         ?int $cuotasMesCant, ?float $cuotasMesMonto,
-        int $activo
+        int $activo, ?int $orden = null
     ): bool {
+        if ($orden !== null) {
+            if ($imagen !== null) {
+                $stmt = $this->db->prepare(
+                    'UPDATE articulos SET categoria_id=?, nombre=?, descripcion=?, imagen=?,
+                     precio_contado=?, cuotas_sem_cant=?, cuotas_sem_monto=?,
+                     cuotas_mes_cant=?, cuotas_mes_monto=?, activo=?, orden=?
+                     WHERE id=?'
+                );
+                return $stmt->execute([
+                    $categoriaId, $nombre, $descripcion, $imagen, $precioContado,
+                    $cuotasSemCant, $cuotasSemMonto, $cuotasMesCant, $cuotasMesMonto,
+                    $activo, $orden, $id
+                ]);
+            }
+            $stmt = $this->db->prepare(
+                'UPDATE articulos SET categoria_id=?, nombre=?, descripcion=?,
+                 precio_contado=?, cuotas_sem_cant=?, cuotas_sem_monto=?,
+                 cuotas_mes_cant=?, cuotas_mes_monto=?, activo=?, orden=?
+                 WHERE id=?'
+            );
+            return $stmt->execute([
+                $categoriaId, $nombre, $descripcion, $precioContado,
+                $cuotasSemCant, $cuotasSemMonto, $cuotasMesCant, $cuotasMesMonto,
+                $activo, $orden, $id
+            ]);
+        }
+
         if ($imagen !== null) {
             $stmt = $this->db->prepare(
                 'UPDATE articulos SET categoria_id=?, nombre=?, descripcion=?, imagen=?,
@@ -114,11 +145,35 @@ class Articulo
     }
 
     /**
+     * Normaliza el orden de los artículos dentro de una categoría para que sean consecutivos
+     */
+    public function normalizarOrdenes(int $categoriaId): void
+    {
+        $stmt = $this->db->prepare('SELECT id FROM articulos WHERE categoria_id = ? ORDER BY orden ASC, creado_en DESC, id DESC');
+        $stmt->execute([$categoriaId]);
+        $articulos = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        $upd = $this->db->prepare('UPDATE articulos SET orden = ? WHERE id = ?');
+        foreach ($articulos as $index => $id) {
+            $upd->execute([$index + 1, $id]);
+        }
+    }
+
+    /**
      * Intercambia el orden de dos artículos (mover arriba/abajo)
      */
     public function intercambiarOrden(int $idA, int $idB): void
     {
-        $stmt = $this->db->prepare('SELECT id, orden FROM articulos WHERE id IN (?,?) ORDER BY orden ASC, id ASC');
+        // Obtener la categoría del artículo A para saber cuál normalizar
+        $stmt = $this->db->prepare('SELECT categoria_id FROM articulos WHERE id = ?');
+        $stmt->execute([$idA]);
+        $categoriaId = (int)$stmt->fetchColumn();
+        
+        if ($categoriaId) {
+            $this->normalizarOrdenes($categoriaId);
+        }
+
+        $stmt = $this->db->prepare('SELECT id, orden FROM articulos WHERE id IN (?,?)');
         $stmt->execute([$idA, $idB]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (count($rows) < 2) return;

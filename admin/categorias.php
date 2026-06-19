@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nombre = trim($_POST['nombre'] ?? '');
             $slug   = trim($_POST['slug']   ?? '') ?: Categoria::slugify($nombre);
             $fijo   = isset($_POST['fijo']) ? 1 : 0;
+            $orden  = (isset($_POST['orden']) && $_POST['orden'] !== '') ? (int)$_POST['orden'] : null;
             $imagen = null;
 
             if (empty($nombre)) {
@@ -32,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!empty($_FILES['imagen']['name'])) {
                         $imagen = Upload::imagen($_FILES['imagen'], UPLOAD_DIR);
                     }
-                    $catModel->crear($nombre, $slug, $imagen, $fijo);
+                    $catModel->crear($nombre, $slug, $imagen, $fijo, $orden);
                     $msg = 'Categoría creada correctamente.';
                 } catch (\RuntimeException $e) {
                     $msg = $e->getMessage(); $msgTipo = 'danger';
@@ -98,6 +99,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msg = 'Orden actualizado.';
             }
         }
+
+        /* Guardar ordenes en lote */
+        elseif ($accion === 'guardar_ordenes_lote') {
+            $ordenes = $_POST['ordenes'] ?? [];
+            foreach ($ordenes as $id => $val) {
+                $catModel->actualizarOrden((int)$id, (int)$val);
+            }
+            $msg = 'Órdenes de categorías actualizados.';
+        }
     }
 }
 
@@ -107,6 +117,10 @@ if (isset($_GET['editar'])) {
 }
 
 $categorias  = $catModel->obtenerTodas();
+$maxOrden = 0;
+foreach ($categorias as $cat) {
+    $maxOrden = max($maxOrden, (int)$cat['orden']);
+}
 $tituloAdmin = 'Categorías';
 require 'partials/header.php';
 ?>
@@ -166,7 +180,6 @@ require 'partials/header.php';
           </label>
         </div>
       </div>
-      <?php if ($editando): ?>
       <div class="col-md-3">
         <label class="form-label fw-semibold" style="font-size:.85rem;">
           Orden de visualización
@@ -174,10 +187,9 @@ require 'partials/header.php';
         </label>
         <input type="number" name="orden" class="form-control form-control-ios"
                min="1" step="1"
-               value="<?= (int)($editando['orden'] ?? 0) ?>"
+               value="<?= (int)($editando ? $editando['orden'] : ($maxOrden + 1)) ?>"
                placeholder="1">
       </div>
-      <?php endif; ?>
       <div class="col-12">
         <label class="form-label fw-semibold" style="font-size:.85rem;">
           Imagen de portada (proporción 4:5 recomendada)
@@ -206,12 +218,23 @@ require 'partials/header.php';
   </form>
 </div>
 
+<!-- Formulario oculto para guardar orden en lote -->
+<form id="loteForm" method="POST">
+  <?= Auth::campoCSRF() ?>
+  <input type="hidden" name="accion" value="guardar_ordenes_lote">
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h2 class="h6 fw-bold mb-0">Lista de Categorías</h2>
+  <button type="submit" form="loteForm" class="btn-ios-primary btn-sm" style="padding:.4rem .9rem; font-size:.82rem;">Guardar Orden</button>
+</div>
+
 <!-- Tabla de categorías -->
 <div class="table-ios">
   <table class="table table-hover mb-0">
     <thead>
       <tr>
-        <th style="width:60px;">Orden</th>
+        <th style="width:90px;">Orden</th>
         <th>Imagen</th>
         <th>Nombre</th>
         <th>Slug</th>
@@ -226,13 +249,16 @@ require 'partials/header.php';
       <?php else: ?>
         <?php foreach ($categorias as $i => $c): ?>
           <?php
-            $prevId = ($i > 0) ? $categorias[$i - 1]['id'] : null;
-            $nextId = ($i < count($categorias) - 1) ? $categorias[$i + 1]['id'] : null;
+            $prevId = ($i > 0 && $categorias[$i - 1]['fijo'] == $c['fijo']) ? $categorias[$i - 1]['id'] : null;
+            $nextId = ($i < count($categorias) - 1 && $categorias[$i + 1]['fijo'] == $c['fijo']) ? $categorias[$i + 1]['id'] : null;
           ?>
           <tr>
             <td>
               <div class="d-flex flex-column align-items-center gap-1">
-                <span class="fw-bold" style="font-size:.8rem;color:var(--text-2);"><?= (int)$c['orden'] ?></span>
+                <input type="number" form="loteForm" name="ordenes[<?= (int)$c['id'] ?>]" value="<?= (int)$c['orden'] ?>" 
+                       class="form-control form-control-ios form-control-sm text-center" 
+                       style="width:55px; padding:2px; font-size:.8rem; font-weight:bold; margin-bottom: 2px;"
+                       min="1" step="1">
                 <div class="d-flex gap-1">
                   <?php if ($prevId): ?>
                     <form method="POST" class="m-0">
