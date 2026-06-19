@@ -18,7 +18,7 @@ class Categoria
     {
         $stmt = $this->db->query(
             'SELECT id, nombre, slug, imagen, fijo FROM categorias
-             WHERE activo = 1 ORDER BY fijo DESC, creado_en DESC, id DESC'
+             WHERE activo = 1 ORDER BY fijo DESC, orden ASC, creado_en DESC, id DESC'
         );
         return $stmt->fetchAll();
     }
@@ -27,7 +27,7 @@ class Categoria
     {
         $stmt = $this->db->query(
             'SELECT id, nombre, slug, imagen FROM categorias
-             WHERE activo = 1 AND fijo = 1 ORDER BY creado_en DESC, id DESC'
+             WHERE activo = 1 AND fijo = 1 ORDER BY orden ASC, creado_en DESC, id DESC'
         );
         return $stmt->fetchAll();
     }
@@ -35,8 +35,8 @@ class Categoria
     public function obtenerTodas(): array
     {
         $stmt = $this->db->query(
-            'SELECT id, nombre, slug, imagen, activo, fijo, creado_en FROM categorias
-             ORDER BY fijo DESC, creado_en DESC, id DESC'
+            'SELECT id, nombre, slug, imagen, activo, fijo, orden, creado_en FROM categorias
+             ORDER BY fijo DESC, orden ASC, creado_en DESC, id DESC'
         );
         return $stmt->fetchAll();
     }
@@ -53,7 +53,7 @@ class Categoria
     public function obtenerPorId(int $id): array|false
     {
         $stmt = $this->db->prepare(
-            'SELECT id, nombre, slug, imagen, activo FROM categorias WHERE id = ?'
+            'SELECT id, nombre, slug, imagen, activo, fijo, orden FROM categorias WHERE id = ?'
         );
         $stmt->execute([$id]);
         return $stmt->fetch();
@@ -61,15 +61,30 @@ class Categoria
 
     public function crear(string $nombre, string $slug, ?string $imagen, int $fijo = 0): int
     {
+        // Obtener el máximo orden actual para poner la nueva al final
+        $maxOrden = (int) $this->db->query('SELECT COALESCE(MAX(orden),0) FROM categorias')->fetchColumn();
         $stmt = $this->db->prepare(
-            'INSERT INTO categorias (nombre, slug, imagen, fijo) VALUES (?, ?, ?, ?)'
+            'INSERT INTO categorias (nombre, slug, imagen, fijo, orden) VALUES (?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$nombre, $slug, $imagen, $fijo]);
+        $stmt->execute([$nombre, $slug, $imagen, $fijo, $maxOrden + 1]);
         return (int) $this->db->lastInsertId();
     }
 
-    public function actualizar(int $id, string $nombre, string $slug, ?string $imagen, int $activo, int $fijo = 0): bool
+    public function actualizar(int $id, string $nombre, string $slug, ?string $imagen, int $activo, int $fijo = 0, ?int $orden = null): bool
     {
+        if ($orden !== null) {
+            if ($imagen !== null) {
+                $stmt = $this->db->prepare(
+                    'UPDATE categorias SET nombre=?, slug=?, imagen=?, activo=?, fijo=?, orden=? WHERE id=?'
+                );
+                return $stmt->execute([$nombre, $slug, $imagen, $activo, $fijo, $orden, $id]);
+            }
+            $stmt = $this->db->prepare(
+                'UPDATE categorias SET nombre=?, slug=?, activo=?, fijo=?, orden=? WHERE id=?'
+            );
+            return $stmt->execute([$nombre, $slug, $activo, $fijo, $orden, $id]);
+        }
+
         if ($imagen !== null) {
             $stmt = $this->db->prepare(
                 'UPDATE categorias SET nombre=?, slug=?, imagen=?, activo=?, fijo=? WHERE id=?'
@@ -80,6 +95,30 @@ class Categoria
             'UPDATE categorias SET nombre=?, slug=?, activo=?, fijo=? WHERE id=?'
         );
         return $stmt->execute([$nombre, $slug, $activo, $fijo, $id]);
+    }
+
+    /**
+     * Intercambia el orden de dos categorías (para mover arriba/abajo)
+     */
+    public function intercambiarOrden(int $idA, int $idB): void
+    {
+        $stmt = $this->db->prepare('SELECT id, orden FROM categorias WHERE id IN (?,?) ORDER BY orden ASC, id ASC');
+        $stmt->execute([$idA, $idB]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (count($rows) < 2) return;
+
+        $upd = $this->db->prepare('UPDATE categorias SET orden=? WHERE id=?');
+        $upd->execute([$rows[1]['orden'], $rows[0]['id']]);
+        $upd->execute([$rows[0]['orden'], $rows[1]['id']]);
+    }
+
+    /**
+     * Asigna un número de orden directo a una categoría
+     */
+    public function actualizarOrden(int $id, int $orden): bool
+    {
+        $stmt = $this->db->prepare('UPDATE categorias SET orden=? WHERE id=?');
+        return $stmt->execute([$orden, $id]);
     }
 
     public function eliminar(int $id): bool

@@ -25,6 +25,45 @@ $paginaActual = basename($_SERVER['PHP_SELF']);
         background:rgba(0,0,0,.35); }
       .admin-sidebar { height:100vh; overflow-y:auto; width:240px; }
     }
+
+    /* ── Botones de orden ↑↓ ── */
+    .btn-order-arrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      font-size: .85rem;
+      line-height: 1;
+      background: var(--surface-2, #f0f0f5);
+      color: var(--text-1, #333);
+      border: 1px solid var(--border, #ddd);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+    }
+    .btn-order-arrow:hover {
+      background: var(--accent, #007aff);
+      color: #fff;
+      border-color: var(--accent, #007aff);
+      transform: scale(1.1);
+    }
+    .btn-order-arrow--disabled {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      font-size: .85rem;
+      line-height: 1;
+      background: transparent;
+      color: var(--text-3, #bbb);
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: default;
+      user-select: none;
+    }
   </style>
 </head>
 <body>

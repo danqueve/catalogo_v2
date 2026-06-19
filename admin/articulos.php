@@ -99,6 +99,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msg = 'Artículo eliminado.';
             }
         }
+
+        /* Mover arriba */
+        elseif ($accion === 'mover_arriba') {
+            $id     = (int)($_POST['id']      ?? 0);
+            $idPrev = (int)($_POST['id_prev'] ?? 0);
+            if ($id && $idPrev) {
+                $artModel->intercambiarOrden($id, $idPrev);
+                $msg = 'Orden actualizado.';
+            }
+        }
+
+        /* Mover abajo */
+        elseif ($accion === 'mover_abajo') {
+            $id     = (int)($_POST['id']      ?? 0);
+            $idNext = (int)($_POST['id_next'] ?? 0);
+            if ($id && $idNext) {
+                $artModel->intercambiarOrden($id, $idNext);
+                $msg = 'Orden actualizado.';
+            }
+        }
     }
 }
 
@@ -310,21 +330,55 @@ require 'partials/header.php';
     <table class="table table-hover mb-0" style="min-width:600px;">
       <thead>
         <tr>
+          <th style="width:60px;">Orden</th>
           <th>Imagen</th>
           <th>Nombre</th>
           <th>Categoría</th>
           <th>Semanales</th>
           <th>Mensuales</th>
           <th>Estado</th>
-          <th style="width:140px;">Acciones</th>
+          <th style="width:160px;">Acciones</th>
         </tr>
       </thead>
       <tbody>
         <?php if (empty($articulos)): ?>
-          <tr><td colspan="7" class="text-center text-muted py-4">Sin resultados.</td></tr>
+          <tr><td colspan="8" class="text-center text-muted py-4">Sin resultados.</td></tr>
         <?php else: ?>
-          <?php foreach ($articulos as $a): ?>
+          <?php foreach ($articulos as $i => $a): ?>
+            <?php
+              $prevId = ($i > 0) ? $articulos[$i - 1]['id'] : null;
+              $nextId = ($i < count($articulos) - 1) ? $articulos[$i + 1]['id'] : null;
+            ?>
             <tr>
+              <td>
+                <div class="d-flex flex-column align-items-center gap-1">
+                  <span class="fw-bold" style="font-size:.8rem;color:var(--text-2);"><?= (int)$a['orden'] ?></span>
+                  <div class="d-flex gap-1">
+                    <?php if ($prevId): ?>
+                      <form method="POST" class="m-0">
+                        <?= Auth::campoCSRF() ?>
+                        <input type="hidden" name="accion" value="mover_arriba">
+                        <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+                        <input type="hidden" name="id_prev" value="<?= (int)$prevId ?>">
+                        <button type="submit" class="btn-order-arrow" title="Mover arriba">↑</button>
+                      </form>
+                    <?php else: ?>
+                      <span class="btn-order-arrow btn-order-arrow--disabled">↑</span>
+                    <?php endif; ?>
+                    <?php if ($nextId): ?>
+                      <form method="POST" class="m-0">
+                        <?= Auth::campoCSRF() ?>
+                        <input type="hidden" name="accion" value="mover_abajo">
+                        <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+                        <input type="hidden" name="id_next" value="<?= (int)$nextId ?>">
+                        <button type="submit" class="btn-order-arrow" title="Mover abajo">↓</button>
+                      </form>
+                    <?php else: ?>
+                      <span class="btn-order-arrow btn-order-arrow--disabled">↓</span>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              </td>
               <td>
                 <img src="../public/uploads/productos/<?= htmlspecialchars($a['imagen'], ENT_QUOTES, 'UTF-8') ?>"
                      class="img-thumb" alt="">

@@ -23,7 +23,7 @@ class Articulo
                     cuotas_mes_cant, cuotas_mes_monto
              FROM articulos
              WHERE categoria_id = ? AND activo = 1
-             ORDER BY creado_en DESC, id DESC'
+             ORDER BY orden ASC, creado_en DESC, id DESC'
         );
         $stmt->execute([$categoriaId]);
         return $stmt->fetchAll();
@@ -32,13 +32,13 @@ class Articulo
     public function obtenerTodos(): array
     {
         $stmt = $this->db->query(
-            'SELECT a.id, a.nombre, a.imagen, a.activo, a.creado_en,
+            'SELECT a.id, a.nombre, a.imagen, a.activo, a.creado_en, a.orden,
                     a.cuotas_sem_cant, a.cuotas_sem_monto,
                     a.cuotas_mes_cant, a.cuotas_mes_monto,
                     c.nombre AS categoria_nombre
              FROM articulos a
              JOIN categorias c ON c.id = a.categoria_id
-             ORDER BY a.creado_en DESC, a.id DESC'
+             ORDER BY a.orden ASC, a.creado_en DESC, a.id DESC'
         );
         return $stmt->fetchAll();
     }
@@ -61,15 +61,21 @@ class Articulo
         ?int $cuotasSemCant, ?float $cuotasSemMonto,
         ?int $cuotasMesCant, ?float $cuotasMesMonto
     ): int {
+        // Obtener el máximo orden dentro de la misma categoría
+        $stmt = $this->db->prepare('SELECT COALESCE(MAX(orden),0) FROM articulos WHERE categoria_id = ?');
+        $stmt->execute([$categoriaId]);
+        $maxOrden = (int) $stmt->fetchColumn();
+
         $stmt = $this->db->prepare(
             'INSERT INTO articulos
              (categoria_id, nombre, descripcion, imagen, precio_contado,
-              cuotas_sem_cant, cuotas_sem_monto, cuotas_mes_cant, cuotas_mes_monto)
-             VALUES (?,?,?,?,?,?,?,?,?)'
+              cuotas_sem_cant, cuotas_sem_monto, cuotas_mes_cant, cuotas_mes_monto, orden)
+             VALUES (?,?,?,?,?,?,?,?,?,?)'
         );
         $stmt->execute([
             $categoriaId, $nombre, $descripcion, $imagen, $precioContado,
-            $cuotasSemCant, $cuotasSemMonto, $cuotasMesCant, $cuotasMesMonto
+            $cuotasSemCant, $cuotasSemMonto, $cuotasMesCant, $cuotasMesMonto,
+            $maxOrden + 1
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -107,6 +113,30 @@ class Articulo
         ]);
     }
 
+    /**
+     * Intercambia el orden de dos artículos (mover arriba/abajo)
+     */
+    public function intercambiarOrden(int $idA, int $idB): void
+    {
+        $stmt = $this->db->prepare('SELECT id, orden FROM articulos WHERE id IN (?,?) ORDER BY orden ASC, id ASC');
+        $stmt->execute([$idA, $idB]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (count($rows) < 2) return;
+
+        $upd = $this->db->prepare('UPDATE articulos SET orden=? WHERE id=?');
+        $upd->execute([$rows[1]['orden'], $rows[0]['id']]);
+        $upd->execute([$rows[0]['orden'], $rows[1]['id']]);
+    }
+
+    /**
+     * Asigna un número de orden directo a un artículo
+     */
+    public function actualizarOrden(int $id, int $orden): bool
+    {
+        $stmt = $this->db->prepare('UPDATE articulos SET orden=? WHERE id=?');
+        return $stmt->execute([$orden, $id]);
+    }
+
     public function eliminar(int $id): bool
     {
         $stmt = $this->db->prepare('DELETE FROM articulos WHERE id = ?');
@@ -137,14 +167,14 @@ class Articulo
         $params[] = $offset;
 
         $stmt = $this->db->prepare(
-            "SELECT a.id, a.nombre, a.imagen, a.activo, a.creado_en,
+            "SELECT a.id, a.nombre, a.imagen, a.activo, a.creado_en, a.orden,
                     a.cuotas_sem_cant, a.cuotas_sem_monto,
                     a.cuotas_mes_cant, a.cuotas_mes_monto,
                     c.nombre AS categoria_nombre
              FROM articulos a
              JOIN categorias c ON c.id = a.categoria_id
              WHERE 1=1 $where
-             ORDER BY a.creado_en DESC, a.id DESC
+             ORDER BY a.orden ASC, a.creado_en DESC, a.id DESC
              LIMIT ? OFFSET ?"
         );
         $stmt->execute($params);

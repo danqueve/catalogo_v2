@@ -47,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $slug   = trim($_POST['slug']   ?? '') ?: Categoria::slugify($nombre);
             $activo = (int)($_POST['activo'] ?? 1);
             $fijo   = isset($_POST['fijo']) ? 1 : 0;
+            $orden  = ($_POST['orden'] !== '' && $_POST['orden'] !== null) ? (int)$_POST['orden'] : null;
             $imagen = null;
 
             if (!$id || empty($nombre)) {
@@ -59,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($vieja && $vieja['imagen']) Upload::borrar(UPLOAD_DIR, $vieja['imagen']);
                         $imagen = Upload::imagen($_FILES['imagen'], UPLOAD_DIR);
                     }
-                    $catModel->actualizar($id, $nombre, $slug, $imagen, $activo, $fijo);
+                    $catModel->actualizar($id, $nombre, $slug, $imagen, $activo, $fijo, $orden);
                     $msg = 'Categoría actualizada.';
                 } catch (\RuntimeException $e) {
                     $msg = $e->getMessage(); $msgTipo = 'danger';
@@ -75,6 +76,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($vieja && $vieja['imagen']) Upload::borrar(UPLOAD_DIR, $vieja['imagen']);
                 $catModel->eliminar($id);
                 $msg = 'Categoría eliminada.';
+            }
+        }
+
+        /* Mover arriba */
+        elseif ($accion === 'mover_arriba') {
+            $id = (int)($_POST['id'] ?? 0);
+            $idPrev = (int)($_POST['id_prev'] ?? 0);
+            if ($id && $idPrev) {
+                $catModel->intercambiarOrden($id, $idPrev);
+                $msg = 'Orden actualizado.';
+            }
+        }
+
+        /* Mover abajo */
+        elseif ($accion === 'mover_abajo') {
+            $id = (int)($_POST['id'] ?? 0);
+            $idNext = (int)($_POST['id_next'] ?? 0);
+            if ($id && $idNext) {
+                $catModel->intercambiarOrden($id, $idNext);
+                $msg = 'Orden actualizado.';
             }
         }
     }
@@ -145,6 +166,18 @@ require 'partials/header.php';
           </label>
         </div>
       </div>
+      <?php if ($editando): ?>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold" style="font-size:.85rem;">
+          Orden de visualización
+          <small class="text-muted fw-normal ms-1">— número más bajo aparece primero</small>
+        </label>
+        <input type="number" name="orden" class="form-control form-control-ios"
+               min="1" step="1"
+               value="<?= (int)($editando['orden'] ?? 0) ?>"
+               placeholder="1">
+      </div>
+      <?php endif; ?>
       <div class="col-12">
         <label class="form-label fw-semibold" style="font-size:.85rem;">
           Imagen de portada (proporción 4:5 recomendada)
@@ -178,20 +211,54 @@ require 'partials/header.php';
   <table class="table table-hover mb-0">
     <thead>
       <tr>
+        <th style="width:60px;">Orden</th>
         <th>Imagen</th>
         <th>Nombre</th>
         <th>Slug</th>
         <th>Estado</th>
         <th>Fijo</th>
-        <th style="width:140px;">Acciones</th>
+        <th style="width:160px;">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <?php if (empty($categorias)): ?>
-        <tr><td colspan="6" class="text-center text-muted py-4">Aún no hay categorías.</td></tr>
+        <tr><td colspan="7" class="text-center text-muted py-4">Aún no hay categorías.</td></tr>
       <?php else: ?>
-        <?php foreach ($categorias as $c): ?>
+        <?php foreach ($categorias as $i => $c): ?>
+          <?php
+            $prevId = ($i > 0) ? $categorias[$i - 1]['id'] : null;
+            $nextId = ($i < count($categorias) - 1) ? $categorias[$i + 1]['id'] : null;
+          ?>
           <tr>
+            <td>
+              <div class="d-flex flex-column align-items-center gap-1">
+                <span class="fw-bold" style="font-size:.8rem;color:var(--text-2);"><?= (int)$c['orden'] ?></span>
+                <div class="d-flex gap-1">
+                  <?php if ($prevId): ?>
+                    <form method="POST" class="m-0">
+                      <?= Auth::campoCSRF() ?>
+                      <input type="hidden" name="accion" value="mover_arriba">
+                      <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
+                      <input type="hidden" name="id_prev" value="<?= (int)$prevId ?>">
+                      <button type="submit" class="btn-order-arrow" title="Mover arriba">↑</button>
+                    </form>
+                  <?php else: ?>
+                    <span class="btn-order-arrow btn-order-arrow--disabled">↑</span>
+                  <?php endif; ?>
+                  <?php if ($nextId): ?>
+                    <form method="POST" class="m-0">
+                      <?= Auth::campoCSRF() ?>
+                      <input type="hidden" name="accion" value="mover_abajo">
+                      <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
+                      <input type="hidden" name="id_next" value="<?= (int)$nextId ?>">
+                      <button type="submit" class="btn-order-arrow" title="Mover abajo">↓</button>
+                    </form>
+                  <?php else: ?>
+                    <span class="btn-order-arrow btn-order-arrow--disabled">↓</span>
+                  <?php endif; ?>
+                </div>
+              </div>
+            </td>
             <td>
               <?php if ($c['imagen']): ?>
                 <img src="../public/uploads/productos/<?= htmlspecialchars($c['imagen'], ENT_QUOTES, 'UTF-8') ?>"
