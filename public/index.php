@@ -146,14 +146,7 @@ $ogImage = $ogImageCat ? UPLOAD_URL . rawurlencode($ogImageCat) : null;
     }
     .btn-wa-cat:active { transform: scale(.95); }
   </style>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=GT-5D9RBG98"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'GT-5D9RBG98');
-  </script>
+  <?php include __DIR__ . '/partials/analytics.php'; ?>
 </head>
 <body>
 
