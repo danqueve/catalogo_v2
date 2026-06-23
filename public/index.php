@@ -22,12 +22,12 @@ $ogImage = $ogImageCat ? UPLOAD_URL . rawurlencode($ogImageCat) : null;
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <title>Catálogo — Imperio Comercial</title>
-  <meta name="description"         content="Explorá nuestro catálogo de productos con los mejores precios y financiación.">
+  <title>Imperio Comercial Tucumán | Muebles, Electrodomésticos y Asadores en Cuotas | Solo tu DNI</title>
+  <meta name="description"         content="Comprá muebles, electrodomésticos y asadores en cuotas semanales en Tucumán. Solo necesitás tu DNI. Entrega gratis dentro de Tucumán. Visitanos en Corrientes 2200.">
   <meta property="og:type"         content="website">
-  <meta property="og:site_name"    content="Imperio Comercial">
-  <meta property="og:title"        content="Catálogo — Imperio Comercial">
-  <meta property="og:description"  content="Explorá nuestro catálogo de productos con los mejores precios y financiación.">
+  <meta property="og:site_name"    content="Imperio Comercial Tucumán">
+  <meta property="og:title"        content="Imperio Comercial Tucumán | Muebles y Electrodomésticos en Cuotas | Solo tu DNI">
+  <meta property="og:description"  content="Comprá muebles, electrodomésticos y asadores en cuotas semanales en Tucumán. Solo necesitás tu DNI. Entrega gratis dentro de Tucumán.">
   <meta property="og:url"          content="<?= BASE_URL ?>">
   <?php if ($ogImage): ?>
   <meta property="og:image"        content="<?= htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8') ?>">
