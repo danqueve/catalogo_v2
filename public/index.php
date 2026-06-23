@@ -43,6 +43,7 @@ $ogImage = $ogImageCat ? UPLOAD_URL . rawurlencode($ogImageCat) : null;
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
         crossorigin="anonymous">
   <link rel="stylesheet" href="assets/css/app.css">
+  <?php include __DIR__ . '/partials/analytics.php'; ?>
   <style>
     .promo-banner-wrap{max-width:960px;margin:0 auto;padding:1rem .75rem .5rem}
     .promo-card{
@@ -146,7 +147,6 @@ $ogImage = $ogImageCat ? UPLOAD_URL . rawurlencode($ogImageCat) : null;
     }
     .btn-wa-cat:active { transform: scale(.95); }
   </style>
-  <?php include __DIR__ . '/partials/analytics.php'; ?>
 </head>
 <body>
 
