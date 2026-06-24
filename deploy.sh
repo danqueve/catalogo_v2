@@ -12,4 +12,8 @@ git pull origin main
 echo "→ Syncing public/ to web root..."
 rsync -av --exclude='uploads/' public/ "$DEPLOY_DIR/"
 
+echo "→ Fixing bootstrap paths for root-level deployment..."
+sed -i "s|__DIR__ . '/../src/bootstrap.php'|__DIR__ . '/src/bootstrap.php'|g" "$DEPLOY_DIR/index.php"
+sed -i "s|__DIR__ . '/../src/bootstrap.php'|__DIR__ . '/src/bootstrap.php'|g" "$DEPLOY_DIR/categoria.php"
+
 echo "✓ Deploy complete."
