@@ -2,7 +2,6 @@
 require_once __DIR__ . '/../src/bootstrap.php';
 
 use Models\Categoria;
-use Helpers\Whatsapp;
 
 $categoriaModel = new Categoria();
 $categorias     = $categoriaModel->obtenerActivas();
@@ -166,5 +165,6 @@ $waFab   = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
   </svg>
 </a>
 
+<script src="assets/js/ic.js" defer></script>
 </body>
 </html>
