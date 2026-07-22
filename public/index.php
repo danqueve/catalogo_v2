@@ -52,11 +52,14 @@ $waFab   = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
 <header class="ic-header">
   <div class="ic-header-inner">
     <a href="index.php" class="ic-brand">Imperio <span>Comercial</span></a>
-    <button class="ic-menu-btn" aria-label="Menú" onclick="this.blur()">
+    <?php if (!empty($categorias)): ?>
+    <button id="icMenuButton" class="ic-menu-btn" type="button"
+            aria-label="Mostrar categorías" aria-controls="icCategoryMenu" aria-expanded="false">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round">
         <path d="M3 12h18M3 6h18M3 18h18"/>
       </svg>
     </button>
+    <?php endif; ?>
   </div>
   <div class="ic-search-wrap">
     <svg class="ic-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -66,6 +69,16 @@ $waFab   = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
            placeholder='Buscar productos… "smart tv", "living"'
            aria-label="Buscar productos" autocomplete="off">
   </div>
+  <?php if (!empty($categorias)): ?>
+  <nav id="icCategoryMenu" class="ic-category-menu" aria-label="Categorías" hidden>
+    <p class="ic-category-menu-title">Categorías</p>
+    <?php foreach ($categorias as $cat): ?>
+    <a href="categoria.php?slug=<?= htmlspecialchars($cat['slug'], ENT_QUOTES, 'UTF-8') ?>">
+      <?= htmlspecialchars($cat['nombre'], ENT_QUOTES, 'UTF-8') ?>
+    </a>
+    <?php endforeach; ?>
+  </nav>
+  <?php endif; ?>
 </header>
 
 <!-- FRANJA CRÉDITO -->
@@ -155,15 +168,6 @@ $waFab   = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
        class="ic-btn-outline">Consultar requisitos</a>
   </div>
 </div>
-
-<!-- FAB WHATSAPP (único, global) -->
-<a href="<?= htmlspecialchars($waFab, ENT_QUOTES, 'UTF-8') ?>"
-   class="ic-fab-wa" target="_blank" rel="noopener noreferrer"
-   aria-label="Consultar por WhatsApp">
-  <svg width="26" height="26" viewBox="0 0 32 32" fill="currentColor">
-    <path d="M16 2C8.27 2 2 8.27 2 16c0 2.44.66 4.82 1.9 6.9L2 30l7.34-1.87A13.94 13.94 0 0 0 16 30c7.73 0 14-6.27 14-14S23.73 2 16 2zm7.6 19.4c-.32.9-1.87 1.72-2.58 1.82-.66.1-1.5.14-2.42-.15-.56-.18-1.28-.42-2.2-.82-3.88-1.68-6.42-5.6-6.62-5.86-.2-.26-1.6-2.13-1.6-4.06 0-1.93 1.01-2.88 1.37-3.27.36-.39.78-.49 1.04-.49.26 0 .52 0 .75.01.24.01.56-.09.88.67.32.78 1.1 2.7 1.2 2.9.1.2.16.43.03.69-.13.26-.2.42-.39.65-.2.23-.41.51-.59.69-.19.18-.39.38-.17.74.22.36.99 1.63 2.13 2.64 1.46 1.3 2.69 1.7 3.05 1.89.36.19.57.16.78-.1.21-.26.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.1.99 2.46 1.17.36.18.6.27.69.42.09.16.09.9-.23 1.8z"/>
-  </svg>
-</a>
 
 <script src="assets/js/ic.js" defer></script>
 </body>

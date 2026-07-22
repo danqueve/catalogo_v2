@@ -550,6 +550,40 @@ a { color: var(--accent); text-decoration: none; }
   touch-action: manipulation;
 }
 .ic-menu-btn:hover { background: var(--ic-n200); }
+.ic-category-menu {
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  padding: 14px 16px 18px;
+  background: var(--ic-surface);
+  border-top: 1px solid var(--ic-n200);
+  box-shadow: var(--ic-sh-md);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.ic-category-menu[hidden] { display: none; }
+.ic-category-menu-title {
+  grid-column: 1 / -1;
+  margin: 0 0 2px;
+  color: var(--ic-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.ic-category-menu a {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid var(--ic-n300);
+  border-radius: 10px;
+  color: var(--ic-text);
+  font-size: 14px;
+  font-weight: 700;
+  touch-action: manipulation;
+}
+.ic-category-menu a:active { background: var(--ic-n200); }
 
 .ic-search-wrap {
   position: relative;
@@ -797,25 +831,6 @@ a { color: var(--accent); text-decoration: none; }
   margin: 0 0 18px; line-height: 1.55;
 }
 
-/* ── FAB WHATSAPP ────────────────────────────────────────── */
-.ic-fab-wa {
-  position: fixed;
-  bottom: max(24px, env(safe-area-inset-bottom, 24px));
-  right: 20px;
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  background: var(--ic-a2-600);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--ic-sh-lg);
-  z-index: 200;
-  text-decoration: none;
-  transition: background .15s, transform .15s;
-  touch-action: manipulation;
-}
-.ic-fab-wa:hover { background: var(--ic-a2-700); color: #fff; transform: scale(1.06); }
-.ic-fab-wa:active { transform: scale(.94); }
-
 /* ── EMPTY STATE ─────────────────────────────────────────── */
 .ic-empty {
   padding: 48px 16px;
@@ -955,18 +970,67 @@ html:has(body.ic-page) { background: #f5ead8; }
 
 /* ── FICHA DE PRODUCTO ───────────────────────────────────── */
 .ic-ficha-img {
-  height: 260px;
+  display: block;
+  aspect-ratio: 4 / 5;
   margin: 12px 16px;
   border-radius: var(--ic-r-card);
   overflow: hidden;
   background: var(--ic-n200);
 }
-.ic-ficha-img img { width: 100%; height: 100%; object-fit: cover; }
+.ic-ficha-img img { width: 100%; height: 100%; object-fit: contain; }
+.ic-ficha-img-zoom {
+  cursor: zoom-in;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
 .ic-ficha-img-ph {
   width: 100%; height: 100%;
   background: var(--ic-n200);
   display: flex; align-items: center; justify-content: center;
 }
+.ic-image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  background: rgba(20, 20, 20, .38);
+}
+.ic-image-lightbox[hidden] { display: none; }
+.ic-image-lightbox-panel {
+  position: relative;
+  width: min(86vw, 400px);
+  max-height: 75dvh;
+  padding: 10px;
+  background: var(--ic-surface);
+  border-radius: calc(var(--ic-r-card) + 4px);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .35);
+}
+.ic-image-lightbox img {
+  width: 100%;
+  max-height: calc(75dvh - 20px);
+  object-fit: contain;
+  border-radius: var(--ic-r-card);
+}
+.ic-image-lightbox-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ic-text);
+  color: #fff;
+  font-size: 27px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--ic-sh-md);
+}
+body.ic-image-lightbox-open { overflow: hidden; }
 .ic-ficha-body { padding: 0 16px 32px; }
 .ic-tag-credito {
   display: inline-flex;
@@ -1059,27 +1123,6 @@ html:has(body.ic-page) { background: #f5ead8; }
   gap: 6px;
   color: var(--ic-text-muted);
 }
-.ic-btn-consultar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 50px;
-  border-radius: var(--ic-r-pill);
-  background: var(--ic-a2-600);
-  color: #fff;
-  font-family: var(--ic-display);
-  font-size: 16px;
-  font-weight: 400;
-  border: none;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background .15s;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.ic-btn-consultar:hover { background: var(--ic-a2-700); color: #fff; }
-.ic-btn-consultar:active { background: var(--ic-a2-800); }
 .ic-btn-compartir {
   display: flex;
   align-items: center;
