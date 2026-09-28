@@ -39,6 +39,54 @@ class Promociones
         return rtrim($base, '/') . '/promociones/';
     }
 
+    private static function archivoMetadatos(): string
+    {
+        return self::directorioCarga() . '/promociones.json';
+    }
+
+    private static function slugSeguro(string $slug): bool
+    {
+        return preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug) === 1;
+    }
+
+    private static function leerMetadatos(): array
+    {
+        $archivo = self::archivoMetadatos();
+        if (!is_file($archivo)) {
+            return [];
+        }
+
+        $datos = json_decode((string) file_get_contents($archivo), true);
+        if (!is_array($datos)) {
+            return [];
+        }
+
+        $validos = [];
+        foreach ($datos as $nombre => $dato) {
+            $slug = is_array($dato) ? (string) ($dato['categoria_slug'] ?? '') : '';
+            if (self::nombreSeguro((string) $nombre) && self::slugSeguro($slug)) {
+                $validos[$nombre] = ['categoria_slug' => $slug];
+            }
+        }
+        return $validos;
+    }
+
+    private static function guardarMetadatos(array $metadatos): void
+    {
+        $directorio = self::directorioCarga();
+        if (!is_dir($directorio) && !mkdir($directorio, 0755, true) && !is_dir($directorio)) {
+            throw new \RuntimeException('No se pudo preparar la configuración de promociones.');
+        }
+        if (!is_writable($directorio)) {
+            throw new \RuntimeException('No se pudo guardar el destino de la promoción.');
+        }
+
+        $json = json_encode($metadatos, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        if ($json === false || file_put_contents(self::archivoMetadatos(), $json, LOCK_EX) === false) {
+            throw new \RuntimeException('No se pudo guardar el destino de la promoción.');
+        }
+    }
+
     /** Directorio visible directamente en el VPS después de sincronizar public/. */
     private static function directorioEspejo(): string
     {
@@ -85,11 +133,14 @@ class Promociones
     public static function obtenerActivas(): array
     {
         $promociones = [];
+        $metadatos = self::leerMetadatos();
         foreach (self::archivos() as $nombre => $archivo) {
+            $slug = $metadatos[$nombre]['categoria_slug'] ?? '';
             $promociones[] = [
                 'id'     => 'promo-' . substr(sha1($nombre), 0, 12),
                 'imagen' => $archivo['url'],
                 'alt'    => 'Promoción de Imperio Comercial',
+                'enlace' => $slug !== '' ? 'categoria.php?slug=' . rawurlencode($slug) : 'promociones.php',
             ];
         }
         return $promociones;
@@ -99,19 +150,24 @@ class Promociones
     public static function obtenerParaAdmin(): array
     {
         $promociones = [];
+        $metadatos = self::leerMetadatos();
         foreach (self::archivos() as $nombre => $archivo) {
             $promociones[] = [
                 'nombre' => $nombre,
                 'imagen' => $archivo['url'],
+                'categoria_slug' => $metadatos[$nombre]['categoria_slug'] ?? '',
             ];
         }
         return $promociones;
     }
 
     /** Guarda una imagen y la deja lista para el carrusel. */
-    public static function subir(array $archivo, int $orden): string
+    public static function subir(array $archivo, int $orden, string $categoriaSlug): string
     {
         $orden = max(1, min($orden, 999));
+        if (!self::slugSeguro($categoriaSlug)) {
+            throw new \RuntimeException('Seleccioná una categoría válida para la promoción.');
+        }
         $directorio = self::directorioCarga();
         if (!is_dir($directorio) && !mkdir($directorio, 0755, true) && !is_dir($directorio)) {
             throw new \RuntimeException('No se pudo preparar la carpeta de promociones.');
@@ -129,7 +185,26 @@ class Promociones
             throw new \RuntimeException('No se pudo ordenar la imagen cargada.');
         }
 
+        try {
+            self::asignarCategoria($nombre, $categoriaSlug);
+        } catch (\RuntimeException $e) {
+            @unlink($destino);
+            throw $e;
+        }
+
         return $nombre;
+    }
+
+    /** Define la categoría que se abrirá al tocar una imagen del carrusel. */
+    public static function asignarCategoria(string $nombre, string $categoriaSlug): void
+    {
+        if (!self::nombreSeguro($nombre) || !self::slugSeguro($categoriaSlug)) {
+            throw new \RuntimeException('Datos de promoción inválidos.');
+        }
+
+        $metadatos = self::leerMetadatos();
+        $metadatos[$nombre] = ['categoria_slug' => $categoriaSlug];
+        self::guardarMetadatos($metadatos);
     }
 
     /** Elimina una promoción tanto del proyecto como del directorio público. */
@@ -144,6 +219,12 @@ class Promociones
             if (is_file($ruta) && !@unlink($ruta)) {
                 throw new \RuntimeException('No se pudo eliminar la imagen seleccionada.');
             }
+        }
+
+        $metadatos = self::leerMetadatos();
+        if (isset($metadatos[$nombre])) {
+            unset($metadatos[$nombre]);
+            self::guardarMetadatos($metadatos);
         }
     }
 }

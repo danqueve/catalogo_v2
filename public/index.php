@@ -78,7 +78,7 @@ $ogImage = $ogImageCat ? UPLOAD_URL . rawurlencode($ogImageCat) : null;
     <?php foreach ($promociones as $indice => $promocion): ?>
     <article class="ic-promo-slide<?= $indice === 0 ? ' is-active' : '' ?>"
              data-promo-slide aria-hidden="<?= $indice === 0 ? 'false' : 'true' ?>">
-      <a href="promociones.php" class="ic-promo-image-link" aria-label="Ver promociones">
+      <a href="<?= htmlspecialchars($promocion['enlace'], ENT_QUOTES, 'UTF-8') ?>" class="ic-promo-image-link" aria-label="Ver categoría de la promoción">
         <img src="<?= htmlspecialchars($promocion['imagen'], ENT_QUOTES, 'UTF-8') ?>"
              alt="<?= htmlspecialchars($promocion['alt'], ENT_QUOTES, 'UTF-8') ?>"
              <?= $indice === 0 ? 'fetchpriority="high"' : 'loading="lazy"' ?>>

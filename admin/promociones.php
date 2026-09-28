@@ -3,8 +3,11 @@ require_once dirname(__DIR__) . '/src/bootstrap.php';
 
 use Config\Promociones;
 use Helpers\Auth;
+use Models\Categoria;
 
 Auth::requiereAdmin();
+
+$categoriaModel = new Categoria();
 
 $mensaje = '';
 $tipoMensaje = 'success';
@@ -29,8 +32,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new RuntimeException('El orden debe ser un número entre 1 y 999.');
                 }
 
-                Promociones::subir($_FILES['imagen'], $orden);
+                $categoriaSlug = trim((string) ($_POST['categoria_slug'] ?? ''));
+                if (!$categoriaModel->obtenerPorSlug($categoriaSlug)) {
+                    throw new RuntimeException('Seleccioná una categoría válida para la promoción.');
+                }
+
+                Promociones::subir($_FILES['imagen'], $orden, $categoriaSlug);
                 $mensaje = 'Promoción cargada. Ya está disponible en el carrusel.';
+            } elseif ($accion === 'destino') {
+                $categoriaSlug = trim((string) ($_POST['categoria_slug'] ?? ''));
+                if (!$categoriaModel->obtenerPorSlug($categoriaSlug)) {
+                    throw new RuntimeException('Seleccioná una categoría válida para la promoción.');
+                }
+                Promociones::asignarCategoria((string) ($_POST['archivo'] ?? ''), $categoriaSlug);
+                $mensaje = 'Destino de la promoción actualizado.';
             } elseif ($accion === 'eliminar') {
                 Promociones::eliminar((string) ($_POST['archivo'] ?? ''));
                 $mensaje = 'Promoción eliminada del carrusel.';
@@ -43,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $promociones = Promociones::obtenerParaAdmin();
+$categorias = $categoriaModel->obtenerActivas();
 $tituloAdmin = 'Promociones';
 require 'partials/header.php';
 ?>
@@ -61,12 +77,12 @@ require 'partials/header.php';
 <div class="card-ios p-3 p-md-4 mb-4">
   <h2 class="h6 fw-bold mb-2">Nueva imagen para el carrusel</h2>
   <p class="text-muted mb-3" style="font-size:.84rem;">
-    Usá JPG, PNG o WebP de hasta 3 MB. Para mejor resultado, prepará la pieza horizontal en proporción 21:8.
+    Usá JPG, PNG o WebP de hasta 3 MB. Para mejor resultado, prepará la pieza en formato 16:9 (por ejemplo, 1600 × 900 px).
   </p>
   <form method="POST" enctype="multipart/form-data" class="row g-3 align-items-end">
     <?= Auth::campoCSRF() ?>
     <input type="hidden" name="accion" value="subir">
-    <div class="col-md-7">
+    <div class="col-md-5">
       <label for="promoImagen" class="form-label fw-semibold" style="font-size:.85rem;">Imagen *</label>
       <input id="promoImagen" type="file" name="imagen" class="form-control form-control-ios"
              accept="image/jpeg,image/png,image/webp" required>
@@ -77,6 +93,17 @@ require 'partials/header.php';
              value="<?= count($promociones) + 1 ?>" class="form-control form-control-ios" required>
     </div>
     <div class="col-md-3">
+      <label for="promoCategoria" class="form-label fw-semibold" style="font-size:.85rem;">Abrir categoría *</label>
+      <select id="promoCategoria" name="categoria_slug" class="form-select form-control-ios" required>
+        <option value="">Seleccionar…</option>
+        <?php foreach ($categorias as $categoria): ?>
+          <option value="<?= htmlspecialchars($categoria['slug'], ENT_QUOTES, 'UTF-8') ?>">
+            <?= htmlspecialchars($categoria['nombre'], ENT_QUOTES, 'UTF-8') ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div class="col-md-2">
       <button type="submit" class="btn-ios-primary w-100">Subir promoción</button>
     </div>
   </form>
@@ -100,18 +127,38 @@ require 'partials/header.php';
         <article class="card-ios overflow-hidden h-100">
           <img src="<?= htmlspecialchars($promocion['imagen'], ENT_QUOTES, 'UTF-8') ?>"
                alt="Promoción <?= $indice + 1 ?>" style="width:100%;aspect-ratio:21/8;object-fit:cover;display:block;">
-          <div class="p-3 d-flex align-items-center gap-2">
-            <div class="me-auto">
+          <div class="p-3">
+            <div class="mb-3">
               <div class="fw-semibold" style="font-size:.87rem;">Promoción <?= $indice + 1 ?></div>
               <code style="font-size:.7rem;word-break:break-all;"><?= htmlspecialchars($promocion['nombre'], ENT_QUOTES, 'UTF-8') ?></code>
             </div>
-            <form method="POST" class="m-0">
-              <?= Auth::campoCSRF() ?>
-              <input type="hidden" name="accion" value="eliminar">
-              <input type="hidden" name="archivo" value="<?= htmlspecialchars($promocion['nombre'], ENT_QUOTES, 'UTF-8') ?>">
-              <button type="submit" class="btn-ios-danger" style="padding:.38rem .72rem;font-size:.8rem;"
-                      data-confirm="¿Eliminar esta promoción del carrusel?">Eliminar</button>
-            </form>
+            <div class="d-flex align-items-end gap-2 flex-wrap">
+              <form method="POST" class="d-flex align-items-end gap-2 flex-grow-1">
+                <?= Auth::campoCSRF() ?>
+                <input type="hidden" name="accion" value="destino">
+                <input type="hidden" name="archivo" value="<?= htmlspecialchars($promocion['nombre'], ENT_QUOTES, 'UTF-8') ?>">
+                <div class="flex-grow-1">
+                  <label class="form-label mb-1" style="font-size:.75rem;">Abrir categoría</label>
+                  <select name="categoria_slug" class="form-select form-control-ios form-select-sm" required>
+                    <option value="">Seleccionar…</option>
+                    <?php foreach ($categorias as $categoria): ?>
+                      <option value="<?= htmlspecialchars($categoria['slug'], ENT_QUOTES, 'UTF-8') ?>"
+                        <?= $promocion['categoria_slug'] === $categoria['slug'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($categoria['nombre'], ENT_QUOTES, 'UTF-8') ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <button type="submit" class="btn-ios-secondary" style="padding:.38rem .72rem;font-size:.8rem;">Guardar</button>
+              </form>
+              <form method="POST" class="m-0">
+                <?= Auth::campoCSRF() ?>
+                <input type="hidden" name="accion" value="eliminar">
+                <input type="hidden" name="archivo" value="<?= htmlspecialchars($promocion['nombre'], ENT_QUOTES, 'UTF-8') ?>">
+                <button type="submit" class="btn-ios-danger" style="padding:.38rem .72rem;font-size:.8rem;"
+                        data-confirm="¿Eliminar esta promoción del carrusel?">Eliminar</button>
+              </form>
+            </div>
           </div>
         </article>
       </div>
