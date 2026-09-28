@@ -1595,16 +1595,36 @@ html:has(body.ic-page) { background: #fffffe; }
 .ic-section-title { font-size: clamp(23px, 3vw, 30px); }
 .ic-cat-grid { gap: 14px; }
 .ic-cat-card {
+  position: relative;
   padding: 0;
   background: transparent;
   border-radius: 0;
   box-shadow: none;
 }
 .ic-cat-card:hover { box-shadow: none; transform: none; }
+.ic-cat-main { display: block; color: var(--ic-text); }
 .ic-cat-img { height: auto; aspect-ratio: 1 / 1; border-radius: 13px; background: #f4f7f6; }
 .ic-cat-img img { transition: transform .35s ease; }
 .ic-cat-card:hover .ic-cat-img img { transform: scale(1.035); }
 .ic-cat-name { padding: 10px 2px 4px; font-size: 14px; font-weight: 700; }
+.ic-cat-share {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(6,78,59,.2);
+  transition: transform .15s ease, background .15s ease;
+}
+.ic-cat-share:hover { background: #128c7e; color: #fff; transform: scale(1.07); }
+.ic-cat-share:focus-visible { outline: 3px solid var(--ic-accent); outline-offset: 2px; }
 
 .ic-header-back {
   background: rgba(255,255,254,.96);
