@@ -12,8 +12,11 @@ git pull origin main
 echo "→ Syncing public/ to web root..."
 rsync -av --exclude='uploads/' public/ "$DEPLOY_DIR/"
 
+# Página pública retirada: evitar que una versión previa siga accesible en el VPS.
+rm -f "$DEPLOY_DIR/consulta.php"
+
 echo "→ Fixing bootstrap paths for root-level deployment..."
-for f in index.php categoria.php producto.php consulta.php promociones.php; do
+for f in index.php categoria.php producto.php promociones.php; do
   [ -f "$DEPLOY_DIR/$f" ] && sed -i "s|__DIR__ . '/../src/bootstrap.php'|__DIR__ . '/src/bootstrap.php'|g" "$DEPLOY_DIR/$f"
 done
 

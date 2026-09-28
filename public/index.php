@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../src/bootstrap.php';
 
 use Models\Categoria;
+use Models\Articulo;
 use Config\Promociones;
 
 $categoriaModel = new Categoria();
@@ -12,32 +13,34 @@ $resto          = array_filter($categorias, fn($c) => empty($c['fijo']));
 $hero = !empty($fijas) ? array_values($fijas)[0] : null;
 $grid = !empty($fijas) ? array_values($resto) : array_values($categorias);
 $promociones = Promociones::obtenerActivas();
+$busqueda = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
+$busqueda = mb_substr($busqueda, 0, 80);
+$resultadosBusqueda = $busqueda !== '' ? (new Articulo())->buscarActivos($busqueda) : [];
 
 $ogImageCat = null;
 foreach (array_merge(array_values($fijas), array_values($resto)) as $c) {
     if (!empty($c['imagen'])) { $ogImageCat = $c['imagen']; break; }
 }
 $ogImage = $ogImageCat ? UPLOAD_URL . rawurlencode($ogImageCat) : null;
-$waFab   = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f5ead8">
-  <title>Imperio Comercial Tucumán | Muebles, Electrodomésticos y Asadores en Cuotas | Solo tu DNI</title>
-  <meta name="description"         content="Comprá muebles, electrodomésticos y asadores en cuotas semanales en Tucumán. Solo necesitás tu DNI. Entrega gratis dentro de Tucumán. Visitanos en Corrientes 2200.">
+  <meta name="theme-color" content="#155e63">
+  <title>Imperio Comercial Tucumán | Muebles, Electrodomésticos y Asadores</title>
+  <meta name="description"         content="Muebles, electrodomésticos y asadores para tu hogar en Tucumán. Conocé el catálogo y las promociones vigentes.">
   <meta property="og:type"         content="website">
   <meta property="og:site_name"    content="Imperio Comercial Tucumán">
-  <meta property="og:title"        content="Imperio Comercial Tucumán | Muebles y Electrodomésticos en Cuotas | Solo tu DNI">
-  <meta property="og:description"  content="Comprá muebles, electrodomésticos y asadores en cuotas semanales en Tucumán. Solo necesitás tu DNI. Entrega gratis dentro de Tucumán.">
+  <meta property="og:title"        content="Imperio Comercial Tucumán | Muebles y Electrodomésticos">
+  <meta property="og:description"  content="Conocé muebles, electrodomésticos, asadores y las promociones vigentes de Imperio Comercial Tucumán.">
   <meta property="og:url"          content="<?= BASE_URL ?>">
   <?php if ($ogImage): ?>
   <meta property="og:image"        content="<?= htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8') ?>">
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="Imperio Comercial Tucumán | Catálogo">
-  <meta name="twitter:description" content="Comprá en cuotas semanales con solo tu DNI. Tucumán, Sgo. del Estero y Catamarca.">
+  <meta name="twitter:description" content="Muebles, electrodomésticos y promociones de Imperio Comercial Tucumán.">
   <meta name="twitter:image"       content="<?= htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8') ?>">
   <?php endif; ?>
   <link rel="icon" type="image/png" href="assets/img/logo.png">
@@ -54,40 +57,30 @@ $waFab   = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
 <header class="ic-header">
   <div class="ic-header-inner">
     <a href="index.php" class="ic-brand">Imperio <span>Comercial</span></a>
-    <button class="ic-menu-btn" aria-label="Menú" onclick="this.blur()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round">
-        <path d="M3 12h18M3 6h18M3 18h18"/>
-      </svg>
-    </button>
+    <a href="promociones.php" class="ic-header-link">Promociones</a>
   </div>
-  <div class="ic-search-wrap">
+  <form class="ic-search-wrap" action="index.php" method="get" role="search">
     <svg class="ic-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
     </svg>
-    <input type="search" class="ic-search"
+    <input type="search" class="ic-search" name="q" value="<?= htmlspecialchars($busqueda, ENT_QUOTES, 'UTF-8') ?>"
            placeholder='Buscar productos… "smart tv", "living"'
            aria-label="Buscar productos" autocomplete="off">
-  </div>
+    <button class="ic-search-submit" type="submit">Buscar</button>
+  </form>
 </header>
-
-<!-- FRANJA CRÉDITO -->
-<div class="ic-credit-bar">
-  <strong>Crédito personal en el acto</strong>
-  <span>· Entregas en Tucumán, Sgo. del Estero y Catamarca</span>
-</div>
 
 <!-- PROMOCIONES -->
 <?php if (!empty($promociones)): ?>
 <section class="ic-promo-carousel" data-promo-carousel aria-roledescription="carrusel" aria-label="Promociones destacadas">
   <div class="ic-promo-carousel-track">
     <?php foreach ($promociones as $indice => $promocion): ?>
-    <article class="ic-promo-slide ic-promo-tone-<?= htmlspecialchars($promocion['tono'], ENT_QUOTES, 'UTF-8') ?><?= $indice === 0 ? ' is-active' : '' ?>"
+    <article class="ic-promo-slide<?= $indice === 0 ? ' is-active' : '' ?>"
              data-promo-slide aria-hidden="<?= $indice === 0 ? 'false' : 'true' ?>">
-      <p class="ic-promo-eyebrow"><?= htmlspecialchars($promocion['etiqueta'], ENT_QUOTES, 'UTF-8') ?></p>
-      <h2><?= htmlspecialchars($promocion['titulo'], ENT_QUOTES, 'UTF-8') ?></h2>
-      <p class="ic-promo-description"><?= htmlspecialchars($promocion['descripcion'], ENT_QUOTES, 'UTF-8') ?></p>
-      <a href="promociones.php#<?= htmlspecialchars($promocion['id'], ENT_QUOTES, 'UTF-8') ?>" class="ic-promo-cta">
-        Ver promoción <span aria-hidden="true">→</span>
+      <a href="promociones.php" class="ic-promo-image-link" aria-label="Ver promociones">
+        <img src="<?= htmlspecialchars($promocion['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+             alt="<?= htmlspecialchars($promocion['alt'], ENT_QUOTES, 'UTF-8') ?>"
+             <?= $indice === 0 ? 'fetchpriority="high"' : 'loading="lazy"' ?>>
       </a>
     </article>
     <?php endforeach; ?>
@@ -111,20 +104,42 @@ $waFab   = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
 </section>
 <?php endif; ?>
 
-<!-- CHIPS DE CATEGORÍAS -->
-<?php if (!empty($categorias)): ?>
-<div class="ic-chips-outer">
-  <div class="ic-chips">
-    <?php if ($hero): ?>
-    <button class="ic-chip ic-chip-active">Promos del mes</button>
-    <?php endif; ?>
-    <?php foreach ($categorias as $cat): ?>
-    <button class="ic-chip"><?= htmlspecialchars($cat['nombre'], ENT_QUOTES, 'UTF-8') ?></button>
+<?php if ($busqueda !== ''): ?>
+<main class="ic-search-results">
+  <header class="ic-section-head">
+    <div>
+      <p class="ic-search-kicker">Resultados de búsqueda</p>
+      <h1 class="ic-section-title">“<?= htmlspecialchars($busqueda, ENT_QUOTES, 'UTF-8') ?>”</h1>
+    </div>
+    <a href="index.php" class="ic-clear-search">Limpiar</a>
+  </header>
+  <?php if (!empty($resultadosBusqueda)): ?>
+  <div class="ic-prod-grid ic-search-grid">
+    <?php foreach ($resultadosBusqueda as $a): ?>
+    <article class="ic-prod-card">
+      <?php if (!empty($a['imagen'])): ?>
+      <button class="ic-prod-img ic-image-trigger" type="button"
+              data-image-src="<?= UPLOAD_URL . htmlspecialchars($a['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+              data-image-alt="<?= htmlspecialchars($a['nombre'], ENT_QUOTES, 'UTF-8') ?>"
+              aria-label="Ampliar imagen de <?= htmlspecialchars($a['nombre'], ENT_QUOTES, 'UTF-8') ?>">
+        <img src="<?= UPLOAD_URL . htmlspecialchars($a['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+             alt="<?= htmlspecialchars($a['nombre'], ENT_QUOTES, 'UTF-8') ?>" loading="lazy">
+      </button>
+      <?php else: ?>
+      <div class="ic-prod-img ic-prod-img-ph" aria-hidden="true"></div>
+      <?php endif; ?>
+      <div class="ic-prod-body">
+        <p class="ic-prod-category"><?= htmlspecialchars($a['categoria_nombre'], ENT_QUOTES, 'UTF-8') ?></p>
+        <p class="ic-prod-nombre"><?= htmlspecialchars($a['nombre'], ENT_QUOTES, 'UTF-8') ?></p>
+      </div>
+    </article>
     <?php endforeach; ?>
   </div>
-</div>
-<?php endif; ?>
-
+  <?php else: ?>
+  <div class="ic-empty">No encontramos productos para esa búsqueda.</div>
+  <?php endif; ?>
+</main>
+<?php else: ?>
 <!-- HERO (primera categoría fija) -->
 <?php if ($hero): ?>
 <div class="ic-hero-outer">
@@ -140,9 +155,9 @@ $waFab   = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
     </div>
     <div class="ic-hero-body">
       <h2 class="ic-hero-title"><?= htmlspecialchars($hero['nombre'], ENT_QUOTES, 'UTF-8') ?></h2>
-      <p class="ic-hero-desc">Hasta 10 cuotas semanales fijas, sin interés.</p>
+      <p class="ic-hero-desc">Encontrá productos seleccionados para renovar cada espacio.</p>
       <a href="categoria.php?slug=<?= htmlspecialchars($hero['slug'], ENT_QUOTES, 'UTF-8') ?>"
-         class="ic-btn-primary">Ver promos →</a>
+         class="ic-btn-primary">Explorar categoría</a>
     </div>
   </div>
 </div>
@@ -181,27 +196,9 @@ $waFab   = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
 <?php elseif (empty($fijas)): ?>
 <div class="ic-empty">Aún no hay categorías disponibles.</div>
 <?php endif; ?>
+<?php endif; ?>
 
-<!-- BLOQUE ¿CÓMO FUNCIONA EL CRÉDITO? -->
-<div class="ic-credit-block-outer">
-  <div class="ic-credit-block">
-    <h3 class="ic-credit-block-title">¿Cómo funciona el crédito?</h3>
-    <p class="ic-credit-block-desc">Con tu DNI, en el acto. Elegís el producto, te decimos la cuota semanal y coordinamos la entrega.</p>
-    <a href="<?= htmlspecialchars($waFab, ENT_QUOTES, 'UTF-8') ?>"
-       target="_blank" rel="noopener noreferrer"
-       class="ic-btn-outline">Consultar requisitos</a>
-  </div>
-</div>
-
-<!-- FAB WHATSAPP (único, global) -->
-<a href="<?= htmlspecialchars($waFab, ENT_QUOTES, 'UTF-8') ?>"
-   class="ic-fab-wa" target="_blank" rel="noopener noreferrer"
-   aria-label="Consultar por WhatsApp">
-  <svg width="26" height="26" viewBox="0 0 32 32" fill="currentColor">
-    <path d="M16 2C8.27 2 2 8.27 2 16c0 2.44.66 4.82 1.9 6.9L2 30l7.34-1.87A13.94 13.94 0 0 0 16 30c7.73 0 14-6.27 14-14S23.73 2 16 2zm7.6 19.4c-.32.9-1.87 1.72-2.58 1.82-.66.1-1.5.14-2.42-.15-.56-.18-1.28-.42-2.2-.82-3.88-1.68-6.42-5.6-6.62-5.86-.2-.26-1.6-2.13-1.6-4.06 0-1.93 1.01-2.88 1.37-3.27.36-.39.78-.49 1.04-.49.26 0 .52 0 .75.01.24.01.56-.09.88.67.32.78 1.1 2.7 1.2 2.9.1.2.16.43.03.69-.13.26-.2.42-.39.65-.2.23-.41.51-.59.69-.19.18-.39.38-.17.74.22.36.99 1.63 2.13 2.64 1.46 1.3 2.69 1.7 3.05 1.89.36.19.57.16.78-.1.21-.26.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.1.99 2.46 1.17.36.18.6.27.69.42.09.16.09.9-.23 1.8z"/>
-  </svg>
-</a>
-
+<?php include __DIR__ . '/partials/image-viewer.php'; ?>
 <script src="assets/js/ic.js" defer></script>
 </body>
 </html>

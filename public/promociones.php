@@ -11,7 +11,7 @@ $cantidad    = count($promociones);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f5ead8">
+  <meta name="theme-color" content="#155e63">
   <title>Promociones | Imperio Comercial Tucumán</title>
   <meta name="description" content="Conocé las promociones, cuotas y beneficios vigentes de Imperio Comercial Tucumán.">
   <link rel="icon" type="image/png" href="assets/img/logo.png">
@@ -36,25 +36,16 @@ $cantidad    = count($promociones);
 <main class="ic-promos-page">
   <header class="ic-promos-hero">
     <p class="ic-promo-eyebrow">Imperio Comercial</p>
-    <h1>Beneficios para elegir hoy</h1>
-    <p>Cuotas, crédito y entregas pensados para que encontrar lo que necesitás sea más simple.</p>
+    <h1>Promociones vigentes</h1>
+    <p>Conocé las propuestas disponibles en este momento.</p>
   </header>
 
   <?php if ($cantidad > 0): ?>
     <section class="ic-promos-list" aria-label="Promociones vigentes">
       <?php foreach ($promociones as $promocion): ?>
-        <article id="<?= htmlspecialchars($promocion['id'], ENT_QUOTES, 'UTF-8') ?>"
-                 class="ic-promos-card ic-promo-tone-<?= htmlspecialchars($promocion['tono'], ENT_QUOTES, 'UTF-8') ?>">
-          <p class="ic-promo-eyebrow"><?= htmlspecialchars($promocion['etiqueta'], ENT_QUOTES, 'UTF-8') ?></p>
-          <h2><?= htmlspecialchars($promocion['titulo'], ENT_QUOTES, 'UTF-8') ?></h2>
-          <p class="ic-promo-description"><?= htmlspecialchars($promocion['descripcion'], ENT_QUOTES, 'UTF-8') ?></p>
-          <a class="ic-promo-cta"
-             href="<?= htmlspecialchars($promocion['enlace'], ENT_QUOTES, 'UTF-8') ?>">
-            <?= htmlspecialchars($promocion['cta'], ENT_QUOTES, 'UTF-8') ?>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6"/>
-            </svg>
-          </a>
+        <article id="<?= htmlspecialchars($promocion['id'], ENT_QUOTES, 'UTF-8') ?>" class="ic-promos-card">
+          <img src="<?= htmlspecialchars($promocion['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+               alt="<?= htmlspecialchars($promocion['alt'], ENT_QUOTES, 'UTF-8') ?>" loading="lazy">
         </article>
       <?php endforeach; ?>
     </section>

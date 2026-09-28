@@ -3,61 +3,42 @@
 namespace Config;
 
 /**
- * Fuente única de promociones públicas.
+ * Banners públicos de promociones.
  *
- * Para publicar una nueva promoción, agregá un bloque al arreglo con `activo`
- * en true. `tono` admite: naranja, violeta o azul.
+ * Subí imágenes .jpg, .jpeg, .png o .webp a public/assets/img/promociones/.
+ * El carrusel y la página de promociones las detectan y ordenan por nombre.
  */
 class Promociones
 {
-    private const ITEMS = [
-        [
-            'id'          => 'cuotas-fijas',
-            'activo'      => true,
-            'orden'       => 1,
-            'etiqueta'    => 'Promoción destacada',
-            'titulo'      => 'Hasta 12 cuotas fijas',
-            'descripcion' => 'Elegí lo que necesitás y consultá las opciones de financiación disponibles.',
-            'cta'         => 'Consultar financiación',
-            'enlace'      => 'consulta.php',
-            'tono'        => 'naranja',
-        ],
-        [
-            'id'          => 'credito-inmediato',
-            'activo'      => true,
-            'orden'       => 2,
-            'etiqueta'    => 'Crédito personal',
-            'titulo'      => 'Con tu DNI, en el acto',
-            'descripcion' => 'Te asesoramos para que encuentres una cuota que se adapte a vos.',
-            'cta'         => 'Ver cómo funciona',
-            'enlace'      => 'consulta.php',
-            'tono'        => 'violeta',
-        ],
-        [
-            'id'          => 'entrega-tucuman',
-            'activo'      => true,
-            'orden'       => 3,
-            'etiqueta'    => 'Beneficio de compra',
-            'titulo'      => 'Entrega gratis en Tucumán',
-            'descripcion' => 'Consultá por la cobertura de entrega de tu producto y zona.',
-            'cta'         => 'Explorar el catálogo',
-            'enlace'      => 'index.php#categorias',
-            'tono'        => 'azul',
-        ],
-    ];
-
     public static function obtenerActivas(): array
     {
-        $promociones = array_values(array_filter(
-            self::ITEMS,
-            static fn (array $promocion): bool => !empty($promocion['activo'])
-        ));
+        $raiz = dirname(__DIR__, 2);
+        $directorios = [
+            $raiz . '/public/assets/img/promociones',
+            $raiz . '/assets/img/promociones',
+        ];
+        $archivos = [];
 
-        usort(
-            $promociones,
-            static fn (array $a, array $b): int => ($a['orden'] ?? 0) <=> ($b['orden'] ?? 0)
+        foreach ($directorios as $directorio) {
+            if (!is_dir($directorio)) {
+                continue;
+            }
+
+            foreach (glob($directorio . '/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', GLOB_BRACE) ?: [] as $archivo) {
+                $nombre = basename($archivo);
+                $archivos[$nombre] ??= $archivo;
+            }
+        }
+
+        uksort($archivos, 'strnatcasecmp');
+
+        return array_map(
+            static fn (string $nombre): array => [
+                'id'     => 'promo-' . substr(sha1($nombre), 0, 12),
+                'imagen' => 'assets/img/promociones/' . rawurlencode($nombre),
+                'alt'    => 'Promoción de Imperio Comercial',
+            ],
+            array_keys($archivos)
         );
-
-        return $promociones;
     }
 }

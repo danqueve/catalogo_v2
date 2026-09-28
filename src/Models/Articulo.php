@@ -43,6 +43,31 @@ class Articulo
         return $stmt->fetchAll();
     }
 
+    /** Busca productos públicos por nombre, descripción o categoría. */
+    public function buscarActivos(string $termino, int $limite = 48): array
+    {
+        $termino = trim($termino);
+        if ($termino === '') {
+            return [];
+        }
+
+        $limite = max(1, min($limite, 48));
+        $like = '%' . $termino . '%';
+        $stmt = $this->db->prepare(
+            "SELECT a.id, a.nombre, a.imagen, a.precio_contado,
+                    a.cuotas_sem_cant, a.cuotas_sem_monto,
+                    c.nombre AS categoria_nombre, c.slug AS categoria_slug
+             FROM articulos a
+             JOIN categorias c ON c.id = a.categoria_id
+             WHERE a.activo = 1 AND c.activo = 1
+               AND (a.nombre LIKE ? OR a.descripcion LIKE ? OR c.nombre LIKE ?)
+             ORDER BY a.orden ASC, a.creado_en DESC, a.id DESC
+             LIMIT $limite"
+        );
+        $stmt->execute([$like, $like, $like]);
+        return $stmt->fetchAll();
+    }
+
     public function obtenerPorId(int $id): array|false
     {
         $stmt = $this->db->prepare(

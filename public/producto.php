@@ -26,26 +26,7 @@ function fmt(float $n): string {
 $tieneSemanal = !empty($a['cuotas_sem_cant']) && !empty($a['cuotas_sem_monto']);
 $tieneContado = !empty($a['precio_contado']);
 
-$waBase = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
 $pageUrl = BASE_URL . '/producto.php?id=' . $id;
-
-$waUrlSemanal = '';
-if ($tieneSemanal) {
-    $msg = '*' . $a['nombre'] . "*\n\n";
-    $msg .= '💳 Cuota semanal: ' . (int)$a['cuotas_sem_cant'] . ' × $' . fmt((float)$a['cuotas_sem_monto']) . "\n";
-    $msg .= '🔗 ' . $pageUrl;
-    $waUrlSemanal = $waBase . '?text=' . rawurlencode($msg);
-}
-
-$waUrlContado = '';
-if ($tieneContado) {
-    $msg = '*' . $a['nombre'] . "*\n\n";
-    $msg .= '💳 Contado: $' . fmt((float)$a['precio_contado']) . "\n";
-    $msg .= '🔗 ' . $pageUrl;
-    $waUrlContado = $waBase . '?text=' . rawurlencode($msg);
-}
-
-$waUrlDefault  = $waUrlSemanal ?: $waUrlContado;
 $defaultPlan   = $tieneSemanal ? 'semanal' : 'contado';
 
 $totalSemanal = $tieneSemanal
@@ -66,7 +47,7 @@ $ogImage = !empty($a['imagen']) ? UPLOAD_URL . rawurlencode($a['imagen']) : null
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f5ead8">
+  <meta name="theme-color" content="#155e63">
   <title><?= $ogTitle ?></title>
   <meta name="description"        content="<?= $ogDesc ?>">
   <meta property="og:type"        content="product">
@@ -101,11 +82,9 @@ $ogImage = !empty($a['imagen']) ? UPLOAD_URL . rawurlencode($a['imagen']) : null
      class="ic-breadcrumb">
     <?= htmlspecialchars($catNombre, ENT_QUOTES, 'UTF-8') ?>
   </a>
-  <a href="consulta.php" style="margin-left:auto;font-size:13px;color:var(--ic-a2-600);font-weight:600;white-space:nowrap;flex-shrink:0;text-decoration:none;" aria-label="Mi consulta">
-    Mi consulta<span data-cart-count style="margin-left:3px;"></span>
-  </a>
 </header>
 
+<main class="ic-product-page">
 <!-- IMAGEN -->
 <div class="ic-ficha-img">
   <?php if (!empty($a['imagen'])): ?>
@@ -173,51 +152,11 @@ $ogImage = !empty($a['imagen']) ? UPLOAD_URL . rawurlencode($a['imagen']) : null
   <!-- BULLETS DE CONFIANZA -->
   <ul class="ic-trust">
     <li>✓ Entrega en Tucumán, Sgo. del Estero y Catamarca</li>
-    <li>✓ Crédito en el acto con DNI</li>
+    <li>✓ Conocé las alternativas de pago disponibles</li>
   </ul>
 
-  <!-- CTAs -->
-  <a id="btnConsultar"
-     href="<?= htmlspecialchars($waUrlDefault, ENT_QUOTES, 'UTF-8') ?>"
-     target="_blank" rel="noopener noreferrer"
-     class="ic-btn-consultar">
-    <svg width="20" height="20" viewBox="0 0 32 32" fill="currentColor" style="margin-right:8px;flex-shrink:0;">
-      <path d="M16 2C8.27 2 2 8.27 2 16c0 2.44.66 4.82 1.9 6.9L2 30l7.34-1.87A13.94 13.94 0 0 0 16 30c7.73 0 14-6.27 14-14S23.73 2 16 2zm7.6 19.4c-.32.9-1.87 1.72-2.58 1.82-.66.1-1.5.14-2.42-.15-.56-.18-1.28-.42-2.2-.82-3.88-1.68-6.42-5.6-6.62-5.86-.2-.26-1.6-2.13-1.6-4.06 0-1.93 1.01-2.88 1.37-3.27.36-.39.78-.49 1.04-.49.26 0 .52 0 .75.01.24.01.56-.09.88.67.32.78 1.1 2.7 1.2 2.9.1.2.16.43.03.69-.13.26-.2.42-.39.65-.2.23-.41.51-.59.69-.19.18-.39.38-.17.74.22.36.99 1.63 2.13 2.64 1.46 1.3 2.69 1.7 3.05 1.89.36.19.57.16.78-.1.21-.26.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.1.99 2.46 1.17.36.18.6.27.69.42.09.16.09.9-.23 1.8z"/>
-    </svg>
-    Consultar por este producto
-  </a>
-  <p class="ic-cta-note">Abre la línea de consultas de la empresa con el mensaje ya armado.</p>
-
-  <button id="btnCompartir" class="ic-btn-compartir" type="button">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
-      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
-    </svg>
-    Compartir producto
-  </button>
-  <p class="ic-cta-note">Para vendedores: compartí el enlace por tu propio WhatsApp.</p>
-
-  <button id="btnAgregar" class="ic-btn-agregar" type="button">
-    + Agregar a Mi consulta
-  </button>
-
 </div>
-
-<script>
-const IC_PROD = {
-  id: <?= (int)$a['id'] ?>,
-  nombre: <?= json_encode($a['nombre']) ?>,
-  imagen: <?= json_encode(!empty($a['imagen']) ? UPLOAD_URL . $a['imagen'] : '') ?>,
-  cuotas_sem_cant: <?= (int)($a['cuotas_sem_cant'] ?? 0) ?>,
-  cuotas_sem_monto: <?= (float)($a['cuotas_sem_monto'] ?? 0) ?>,
-  precio_contado: <?= (float)($a['precio_contado'] ?? 0) ?>,
-  catSlug: <?= json_encode($catSlug) ?>,
-  waUrlSemanal: <?= json_encode($waUrlSemanal) ?>,
-  waUrlContado: <?= json_encode($waUrlContado) ?>,
-  selectedPlan: <?= json_encode($defaultPlan) ?>,
-  pageUrl: <?= json_encode($pageUrl) ?>
-};
-</script>
+</main>
 <script src="assets/js/ic.js" defer></script>
 </body>
 </html>
