@@ -1,8 +1,3 @@
-<?php
-define('GA4_ID',        'GT-5D9RBG98');
-define('META_PIXEL_ID', '879681947898171');
-?>
-
 <!-- Google Tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=GT-5D9RBG98"></script>
 <script>
@@ -12,7 +7,7 @@ define('META_PIXEL_ID', '879681947898171');
   gtag('config', 'GT-5D9RBG98');
 </script>
 
-<!-- Meta Pixel -->
+<!-- Meta Pixel — Imperio WA Publisher -->
 <script>
   !function(f,b,e,v,n,t,s)
   {if(f.fbq)return;n=f.fbq=function(){n.callMethod?

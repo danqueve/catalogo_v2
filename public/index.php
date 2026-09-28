@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../src/bootstrap.php';
 
 use Models\Categoria;
+use Config\Promociones;
 
 $categoriaModel = new Categoria();
 $categorias     = $categoriaModel->obtenerActivas();
@@ -10,6 +11,7 @@ $resto          = array_filter($categorias, fn($c) => empty($c['fijo']));
 
 $hero = !empty($fijas) ? array_values($fijas)[0] : null;
 $grid = !empty($fijas) ? array_values($resto) : array_values($categorias);
+$promociones = Promociones::obtenerActivas();
 
 $ogImageCat = null;
 foreach (array_merge(array_values($fijas), array_values($resto)) as $c) {
@@ -73,6 +75,41 @@ $waFab   = WA_PHONE ? 'https://wa.me/' . WA_PHONE : 'https://wa.me/';
   <strong>Crédito personal en el acto</strong>
   <span>· Entregas en Tucumán, Sgo. del Estero y Catamarca</span>
 </div>
+
+<!-- PROMOCIONES -->
+<?php if (!empty($promociones)): ?>
+<section class="ic-promo-carousel" data-promo-carousel aria-roledescription="carrusel" aria-label="Promociones destacadas">
+  <div class="ic-promo-carousel-track">
+    <?php foreach ($promociones as $indice => $promocion): ?>
+    <article class="ic-promo-slide ic-promo-tone-<?= htmlspecialchars($promocion['tono'], ENT_QUOTES, 'UTF-8') ?><?= $indice === 0 ? ' is-active' : '' ?>"
+             data-promo-slide aria-hidden="<?= $indice === 0 ? 'false' : 'true' ?>">
+      <p class="ic-promo-eyebrow"><?= htmlspecialchars($promocion['etiqueta'], ENT_QUOTES, 'UTF-8') ?></p>
+      <h2><?= htmlspecialchars($promocion['titulo'], ENT_QUOTES, 'UTF-8') ?></h2>
+      <p class="ic-promo-description"><?= htmlspecialchars($promocion['descripcion'], ENT_QUOTES, 'UTF-8') ?></p>
+      <a href="promociones.php#<?= htmlspecialchars($promocion['id'], ENT_QUOTES, 'UTF-8') ?>" class="ic-promo-cta">
+        Ver promoción <span aria-hidden="true">→</span>
+      </a>
+    </article>
+    <?php endforeach; ?>
+  </div>
+
+  <?php if (count($promociones) > 1): ?>
+  <div class="ic-promo-controls">
+    <div class="ic-promo-indicators" role="tablist" aria-label="Elegir promoción">
+      <?php foreach ($promociones as $indice => $promocion): ?>
+      <button type="button" data-promo-indicator="<?= $indice ?>" role="tab"
+              aria-label="Mostrar promoción <?= $indice + 1 ?>"
+              aria-selected="<?= $indice === 0 ? 'true' : 'false' ?>"></button>
+      <?php endforeach; ?>
+    </div>
+    <div class="ic-promo-arrows">
+      <button type="button" class="ic-promo-arrow" data-promo-prev aria-label="Promoción anterior">‹</button>
+      <button type="button" class="ic-promo-arrow" data-promo-next aria-label="Promoción siguiente">›</button>
+    </div>
+  </div>
+  <?php endif; ?>
+</section>
+<?php endif; ?>
 
 <!-- CHIPS DE CATEGORÍAS -->
 <?php if (!empty($categorias)): ?>

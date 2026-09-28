@@ -110,6 +110,60 @@
     });
   }
 
+  // ── Inicio — carrusel de promociones ──────────────────────────────────────
+  function initPromoCarousel() {
+    var carousel = document.querySelector('[data-promo-carousel]');
+    if (!carousel) return;
+
+    var slides = Array.from(carousel.querySelectorAll('[data-promo-slide]'));
+    var indicators = Array.from(carousel.querySelectorAll('[data-promo-indicator]'));
+    var prev = carousel.querySelector('[data-promo-prev]');
+    var next = carousel.querySelector('[data-promo-next]');
+    if (slides.length < 2) return;
+
+    var current = 0;
+    var timer;
+    var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function show(index) {
+      current = (index + slides.length) % slides.length;
+      slides.forEach(function (slide, i) {
+        var active = i === current;
+        slide.classList.toggle('is-active', active);
+        slide.setAttribute('aria-hidden', active ? 'false' : 'true');
+      });
+      indicators.forEach(function (indicator, i) {
+        var active = i === current;
+        indicator.classList.toggle('is-active', active);
+        indicator.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+    }
+
+    function stop() { window.clearInterval(timer); }
+    function start() {
+      stop();
+      if (!reducedMotion) timer = window.setInterval(function () { show(current + 1); }, 6500);
+    }
+
+    indicators.forEach(function (indicator, i) {
+      indicator.addEventListener('click', function () { show(i); start(); });
+    });
+    if (prev) prev.addEventListener('click', function () { show(current - 1); start(); });
+    if (next) next.addEventListener('click', function () { show(current + 1); start(); });
+
+    var touchStart = 0;
+    carousel.addEventListener('touchstart', function (event) { touchStart = event.changedTouches[0].screenX; }, { passive: true });
+    carousel.addEventListener('touchend', function (event) {
+      var distance = event.changedTouches[0].screenX - touchStart;
+      if (Math.abs(distance) > 45) { show(current + (distance < 0 ? 1 : -1)); start(); }
+    }, { passive: true });
+
+    carousel.addEventListener('mouseenter', stop);
+    carousel.addEventListener('mouseleave', start);
+    document.addEventListener('visibilitychange', function () { document.hidden ? stop() : start(); });
+    start();
+  }
+
   // ── Producto page — plan selector / share / agregar ────────────────────────
   function initProductoPage() {
     if (typeof IC_PROD === 'undefined') return;
@@ -258,6 +312,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     updateCartBadges();
     initCategoriaPage();
+    initPromoCarousel();
     initProductoPage();
     initConsultaPage();
   });
