@@ -62,7 +62,7 @@ function fmt(float $n): string {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/app.css<?= asset_version(__DIR__ . '/assets/css/app.css') ?>">
   <?php include __DIR__ . '/partials/analytics.php'; ?>
 </head>
 <body class="ic-page">
@@ -150,6 +150,6 @@ function fmt(float $n): string {
 <?php endif; ?>
 
 <?php include __DIR__ . '/partials/image-viewer.php'; ?>
-<script src="assets/js/ic.js" defer></script>
+<script src="assets/js/ic.js<?= asset_version(__DIR__ . '/assets/js/ic.js') ?>" defer></script>
 </body>
 </html>
