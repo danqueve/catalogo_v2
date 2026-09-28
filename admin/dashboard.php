@@ -38,6 +38,9 @@ require 'partials/header.php';
   <a href="articulos.php" class="btn-ios-secondary" style="text-decoration:none;">
     + Nuevo artículo
   </a>
+  <a href="promociones.php" class="btn-ios-secondary" style="text-decoration:none;">
+    Administrar promociones
+  </a>
 </div>
 
 <?php require 'partials/footer.php'; ?>

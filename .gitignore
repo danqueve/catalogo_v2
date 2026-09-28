@@ -12,3 +12,7 @@ Thumbs.db
 
 # Carpeta de uploads en raíz
 uploads/
+
+# Imágenes administradas desde el panel de promociones
+/public/assets/img/promociones/*
+!/public/assets/img/promociones/.gitkeep

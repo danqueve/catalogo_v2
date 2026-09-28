@@ -118,6 +118,14 @@ $paginaActual = basename($_SERVER['PHP_SELF']);
         </svg>
         Artículos
       </a>
+      <a href="promociones.php"
+         class="nav-link <?= $paginaActual === 'promociones.php' ? 'active' : '' ?>">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" class="me-2"><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/>
+          <path d="M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 2.5-2.5V7Zm0 0h4.5a2.5 2.5 0 1 0-2.5-2.5V7Z"/>
+        </svg>
+        Promociones
+      </a>
       <hr style="border-color:var(--border);">
       <a href="<?= BASE_URL ?>" target="_blank"
          class="nav-link" style="font-size:.82rem;">
