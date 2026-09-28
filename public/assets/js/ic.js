@@ -69,6 +69,70 @@
     });
   }
 
+  // ── Home — category menu ──────────────────────────────────────────────────
+  function initCategoryMenu() {
+    var button = document.getElementById('icMenuButton');
+    var menu = document.getElementById('icCategoryMenu');
+    if (!button || !menu) return;
+
+    function setOpen(isOpen) {
+      menu.hidden = !isOpen;
+      button.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    button.addEventListener('click', function () {
+      setOpen(menu.hidden);
+    });
+
+    menu.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () { setOpen(false); });
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!menu.hidden && !menu.contains(event.target) && !button.contains(event.target)) {
+        setOpen(false);
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !menu.hidden) {
+        setOpen(false);
+        button.focus();
+      }
+    });
+  }
+
+  // ── Producto — imagen ampliada ────────────────────────────────────────────
+  function initProductImageLightbox() {
+    var trigger = document.getElementById('icProductImage');
+    var lightbox = document.getElementById('icImageLightbox');
+    var closeButton = document.getElementById('icImageLightboxClose');
+    if (!trigger || !lightbox || !closeButton) return;
+
+    function close() {
+      lightbox.hidden = true;
+      lightbox.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('ic-image-lightbox-open');
+      trigger.focus();
+    }
+
+    trigger.addEventListener('click', function (event) {
+      event.preventDefault();
+      lightbox.hidden = false;
+      lightbox.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('ic-image-lightbox-open');
+      closeButton.focus();
+    });
+
+    closeButton.addEventListener('click', close);
+    lightbox.addEventListener('click', function (event) {
+      if (event.target === lightbox) close();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !lightbox.hidden) close();
+    });
+  }
+
   // ── Categoria page — chip filters ──────────────────────────────────────────
   function initCategoriaPage() {
     var grid = document.getElementById('icProdGrid');
@@ -114,7 +178,6 @@
   function initProductoPage() {
     if (typeof IC_PROD === 'undefined') return;
 
-    var btnConsultar = document.getElementById('btnConsultar');
     var btnCompartir = document.getElementById('btnCompartir');
     var btnAgregar   = document.getElementById('btnAgregar');
     var planOpts     = document.querySelectorAll('.ic-plan-opt');
@@ -129,10 +192,6 @@
         var radio = opt.querySelector('.ic-radio');
         if (radio) radio.classList.toggle('ic-radio-checked', active);
       });
-      if (btnConsultar) {
-        var url = plan === 'semanal' ? IC_PROD.waUrlSemanal : IC_PROD.waUrlContado;
-        if (url) btnConsultar.href = url;
-      }
     }
 
     planOpts.forEach(function (opt) {
@@ -257,6 +316,8 @@
   // ── Init ───────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
     updateCartBadges();
+    initCategoryMenu();
+    initProductImageLightbox();
     initCategoriaPage();
     initProductoPage();
     initConsultaPage();
