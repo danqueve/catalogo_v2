@@ -505,6 +505,7 @@ a { color: var(--accent); text-decoration: none; }
   font-size: 15px;
   line-height: 1.55;
   min-height: 100dvh;
+  overflow-x: hidden; /* ✅ FIX MOBILE: evita scroll horizontal y desfase de layout */
 }
 
 .ic-page *, .ic-page *::before, .ic-page *::after { box-sizing: border-box; }
@@ -1498,8 +1499,10 @@ html:has(body.ic-page) { background: #fffffe; }
   background: #94ddfa;
   border-bottom: 1px solid var(--ic-n200);
   box-shadow: 0 1px 0 rgba(21,94,99,.03);
-  padding: 16px max(18px, env(safe-area-inset-left)) 14px;
+  /* ✅ FIX MOBILE: padding-top contempla safe-area (notch) y laterales seguros */
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left));
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 .ic-header-inner,
 .ic-search-wrap { max-width: 1180px; margin-inline: auto; }
@@ -1534,10 +1537,14 @@ html:has(body.ic-page) { background: #fffffe; }
 
 .ic-promo-carousel {
   max-width: 1180px;
-  margin: 20px auto 6px;
-  border-radius: 18px;
+  /* ✅ FIX MOBILE: margen lateral en pantallas pequeñas para evitar overflow */
+  margin: 16px 16px 6px;
+  border-radius: 14px;
   box-shadow: none;
   border: 1px solid var(--ic-n200);
+}
+@media (min-width: 680px) {
+  .ic-promo-carousel { margin: 20px auto 6px; border-radius: 18px; }
 }
 .ic-promo-slide { aspect-ratio: 16 / 9; }
 .ic-promo-image-link img { object-position: center; }
@@ -1565,8 +1572,12 @@ html:has(body.ic-page) { background: #fffffe; }
 .ic-chip-active:hover { background: var(--ic-accent-600); color: #fff; }
 .ic-chip-filter-active { background: var(--ic-accent); border-color: var(--ic-accent); color: #fff; }
 
-.ic-hero-outer, .ic-section { max-width: 1180px; margin-inline: auto; padding-inline: 18px; }
-.ic-hero-outer { padding-top: 24px; }
+.ic-hero-outer, .ic-section { max-width: 1180px; margin-inline: auto; padding-inline: 16px; }
+/* ✅ FIX MOBILE: padding-inline más amplio en tablets+ */
+@media (min-width: 640px) {
+  .ic-hero-outer, .ic-section { padding-inline: 20px; }
+}
+.ic-hero-outer { padding-top: 20px; }
 .ic-hero-card {
   display: grid;
   background: #f2f8f7;
@@ -1669,6 +1680,13 @@ html:has(body.ic-page) { background: #fffffe; }
 .ic-promos-card { border: 1px solid var(--ic-n200); border-radius: 15px; }
 .ic-promos-card img { aspect-ratio: 16 / 9; }
 
+/* ✅ FIX MOBILE: grilla de categorías arranca con columnas mínimas de 140px para
+   evitar que en pantallas de 360px las 2 columnas queden demasiado estrechas */
+.ic-cat-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+@media (min-width: 480px) {
+  .ic-cat-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .ic-prod-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+}
 @media (min-width: 640px) {
   .ic-cat-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
   .ic-prod-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
@@ -1715,11 +1733,15 @@ html:has(body.ic-page) { background: #fffffe; }
 .ic-prod-category { margin: 0; color: var(--ic-text-muted); font-size: 12px; }
 .ic-image-trigger {
   display: block;
+  width: 100%;          /* ✅ FIX MOBILE: el botón no debe desbordar su contenedor */
   padding: 0;
   border: 0;
+  background: transparent;
   color: inherit;
   cursor: zoom-in;
   text-align: inherit;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .ic-image-trigger:focus-visible { outline: 3px solid var(--ic-accent); outline-offset: 3px; }
 .ic-image-viewer-open { overflow: hidden; }
