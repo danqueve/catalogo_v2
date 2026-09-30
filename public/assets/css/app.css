@@ -1387,7 +1387,7 @@ html:has(body.ic-page) { background: #fffffe; }
 .ic-page { letter-spacing: .005em; }
 
 .ic-header {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(83, 210, 245, 0.95);
   border-bottom: 1px solid var(--ic-n200);
   box-shadow: 0 2px 10px rgba(0,0,0,.03);
   padding: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 12px max(14px, env(safe-area-inset-left));
