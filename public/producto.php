@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../src/bootstrap.php';
 
 use Models\Articulo;
+use Helpers\Whatsapp;
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -26,12 +27,18 @@ function fmt(float $n): string {
 $tieneSemanal = !empty($a['cuotas_sem_cant']) && !empty($a['cuotas_sem_monto']);
 $tieneContado = !empty($a['precio_contado']);
 
-$pageUrl = BASE_URL . '/producto.php?id=' . $id;
-$defaultPlan   = $tieneSemanal ? 'semanal' : 'contado';
+$pageUrl     = BASE_URL . '/producto.php?id=' . $id;
+$defaultPlan = $tieneSemanal ? 'semanal' : 'contado';
 
-$totalSemanal = $tieneSemanal
-    ? (int)$a['cuotas_sem_cant'] * (float)$a['cuotas_sem_monto']
-    : 0;
+$precioContado = $tieneContado ? (float)$a['precio_contado'] : 0;
+$cuotasCant    = $tieneSemanal ? (int)$a['cuotas_sem_cant'] : 0;
+$cuotasMonto   = $tieneSemanal ? (float)$a['cuotas_sem_monto'] : 0;
+
+$totalSemanal = $tieneSemanal ? $cuotasCant * $cuotasMonto : 0;
+
+$waSemanal = Whatsapp::urlProducto($a['nombre'], 'semanal', $precioContado, $cuotasCant, $cuotasMonto, $pageUrl);
+$waContado = Whatsapp::urlProducto($a['nombre'], 'contado', $precioContado, $cuotasCant, $cuotasMonto, $pageUrl);
+$waInicial = $defaultPlan === 'semanal' ? $waSemanal : $waContado;
 
 $catSlug   = $a['categoria_slug'] ?? '';
 $catNombre = $a['categoria_nombre'] ?? 'Categoría';
@@ -104,7 +111,9 @@ $ogImage = !empty($a['imagen']) ? UPLOAD_URL . rawurlencode($a['imagen']) : null
 </div>
 
 <!-- CUERPO -->
-<div class="ic-ficha-body">
+<div class="ic-ficha-body"
+     data-wa-semanal="<?= htmlspecialchars($waSemanal, ENT_QUOTES, 'UTF-8') ?>"
+     data-wa-contado="<?= htmlspecialchars($waContado, ENT_QUOTES, 'UTF-8') ?>">
 
   <?php if ($tieneSemanal): ?>
   <span class="ic-tag-credito">Disponible en crédito</span>
@@ -149,8 +158,17 @@ $ogImage = !empty($a['imagen']) ? UPLOAD_URL . rawurlencode($a['imagen']) : null
   </div>
   <?php endif; ?>
 
+  <!-- BOTÓN WHATSAPP -->
+  <a href="<?= htmlspecialchars($waInicial, ENT_QUOTES, 'UTF-8') ?>"
+     class="btn-wa ic-btn-wa-producto" id="btnWaProducto" target="_blank" rel="noopener noreferrer">
+    <svg width="20" height="20" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+      <path d="M16 2C8.27 2 2 8.27 2 16c0 2.44.66 4.82 1.9 6.9L2 30l7.34-1.87A13.94 13.94 0 0 0 16 30c7.73 0 14-6.27 14-14S23.73 2 16 2zm7.6 19.4c-.32.9-1.87 1.72-2.58 1.82-.66.1-1.5.14-2.42-.15-.56-.18-1.28-.42-2.2-.82-3.88-1.68-6.42-5.6-6.62-5.86-.2-.26-1.6-2.13-1.6-4.06 0-1.93 1.01-2.88 1.37-3.27.36-.39.78-.49 1.04-.49.26 0 .52 0 .75.01.24.01.56-.09.88.67.32.78 1.1 2.7 1.2 2.9.1.2.16.43.03.69-.13.26-.2.42-.39.65-.2.23-.41.51-.59.69-.19.18-.39.38-.17.74.22.36.99 1.63 2.13 2.64 1.46 1.3 2.69 1.7 3.05 1.89.36.19.57.16.78-.1.21-.26.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.1 .99 2.46 1.17.36.18.6.27.69.42.09.16.09.9-.23 1.8z"/>
+    </svg>
+    <span>Consultar por WhatsApp</span>
+  </a>
+
   <!-- BULLETS DE CONFIANZA -->
-  <ul class="ic-trust">
+  <ul class="ic-trust" style="margin-top: 20px;">
     <li>✓ Entrega en Tucumán, Sgo. del Estero y Catamarca</li>
     <li>✓ Conocé las alternativas de pago disponibles</li>
   </ul>
@@ -160,3 +178,4 @@ $ogImage = !empty($a['imagen']) ? UPLOAD_URL . rawurlencode($a['imagen']) : null
 <script src="assets/js/ic.js<?= asset_version(__DIR__ . '/assets/js/ic.js') ?>" defer></script>
 </body>
 </html>
+

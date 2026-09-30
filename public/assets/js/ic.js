@@ -81,17 +81,31 @@
 
   function initProductoPage() {
     var planOpts = document.querySelectorAll('.ic-plan-opt');
+    var btnWa = document.getElementById('btnWaProducto');
+    var bodyContainer = document.querySelector('.ic-ficha-body');
+
     planOpts.forEach(function (opt) {
       opt.addEventListener('click', function () {
+        var selectedPlan = opt.dataset.plan;
         planOpts.forEach(function (item) {
           var active = item === opt;
           item.classList.toggle('ic-plan-opt-active', active);
           var radio = item.querySelector('.ic-radio');
           if (radio) radio.classList.toggle('ic-radio-checked', active);
         });
+
+        if (btnWa && bodyContainer) {
+          var targetUrl = selectedPlan === 'semanal'
+            ? bodyContainer.dataset.waSemanal
+            : bodyContainer.dataset.waContado;
+          if (targetUrl) {
+            btnWa.setAttribute('href', targetUrl);
+          }
+        }
       });
     });
   }
+
 
   function initImageViewer() {
     var viewer = document.querySelector('[data-image-viewer]');
