@@ -217,6 +217,15 @@ class Articulo
         return $stmt->execute([$orden, $id]);
     }
 
+    /**
+     * Activa o desactiva un artículo sin tocar el resto de sus datos.
+     */
+    public function actualizarActivo(int $id, int $activo): bool
+    {
+        $stmt = $this->db->prepare('UPDATE articulos SET activo=? WHERE id=?');
+        return $stmt->execute([$activo ? 1 : 0, $id]);
+    }
+
     public function eliminar(int $id): bool
     {
         $stmt = $this->db->prepare('DELETE FROM articulos WHERE id = ?');

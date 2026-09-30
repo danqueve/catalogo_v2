@@ -94,6 +94,58 @@ document.querySelectorAll('.btn-wa[data-wa-text]').forEach(btn => {
   });
 });
 
+// ── Admin: reordenar artículos con drag & drop ──────────
+(function () {
+  const grid = document.querySelector('.admin-grid');
+  if (!grid || !grid.querySelector('.admin-card--sortable')) return;
+
+  function sortables() {
+    return Array.from(grid.querySelectorAll('.admin-card--sortable'));
+  }
+
+  let dragEl = null;
+
+  grid.addEventListener('dragstart', function (e) {
+    const card = e.target.closest('.admin-card--sortable');
+    if (!card) return;
+    dragEl = card;
+    card.classList.add('is-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  grid.addEventListener('dragend', function (e) {
+    const card = e.target.closest('.admin-card--sortable');
+    if (!card) return;
+    card.classList.remove('is-dragging');
+    dragEl = null;
+    renumber();
+  });
+
+  grid.addEventListener('dragover', function (e) {
+    const card = e.target.closest('.admin-card--sortable');
+    if (!card || !dragEl || card === dragEl) return;
+    e.preventDefault();
+    const list = sortables();
+    const dragIdx = list.indexOf(dragEl);
+    const overIdx = list.indexOf(card);
+    if (dragIdx === -1 || overIdx === -1) return;
+    if (dragIdx < overIdx) {
+      card.parentNode.insertBefore(dragEl, card.nextSibling);
+    } else {
+      card.parentNode.insertBefore(dragEl, card);
+    }
+  });
+
+  grid.addEventListener('drop', function (e) { e.preventDefault(); });
+
+  function renumber() {
+    sortables().forEach((card, i) => {
+      const input = card.querySelector('.admin-card-order input[type="number"]');
+      if (input) input.value = i + 1;
+    });
+  }
+})();
+
 // ── Admin: slug automático desde nombre ──────────────────
 (function () {
   const nombreInput = document.getElementById('nombreInput');

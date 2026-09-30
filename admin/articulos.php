@@ -130,6 +130,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $msg = 'Órdenes de artículos actualizados.';
         }
+
+        /* Activar / desactivar rápido */
+        elseif ($accion === 'toggle_activo') {
+            $id     = (int)($_POST['id'] ?? 0);
+            $activo = (int)($_POST['activo'] ?? 0) ? 1 : 0;
+            if ($id) {
+                $artModel->actualizarActivo($id, $activo);
+                $msg = $activo ? 'Artículo activado.' : 'Artículo desactivado.';
+            }
+        }
     }
 }
 
@@ -380,7 +390,8 @@ require 'partials/header.php';
         $prevId = ($i > 0) ? $articulos[$i - 1]['id'] : null;
         $nextId = ($i < count($articulos) - 1) ? $articulos[$i + 1]['id'] : null;
       ?>
-      <article class="admin-card <?= $a['activo'] ? '' : 'admin-card--inactive' ?>">
+      <article class="admin-card <?= $a['activo'] ? '' : 'admin-card--inactive' ?> <?= $filtroCategoria > 0 ? 'admin-card--sortable' : '' ?>"
+               <?= $filtroCategoria > 0 ? 'draggable="true"' : '' ?>>
         <div class="admin-card-media">
           <img src="<?= htmlspecialchars(UPLOAD_URL . rawurlencode($a['imagen']), ENT_QUOTES, 'UTF-8') ?>" alt="">
           <span class="admin-card-status <?= $a['activo'] ? 'is-active' : 'is-inactive' ?>">
@@ -406,26 +417,34 @@ require 'partials/header.php';
 
         <div class="admin-card-order">
           <?php if ($filtroCategoria > 0): ?>
+            <span class="admin-drag-handle" draggable="false" title="Arrastrar para reordenar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/>
+                <circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/>
+                <circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/>
+              </svg>
+            </span>
             <input type="number" form="loteForm" name="ordenes[<?= (int)$a['id'] ?>]" value="<?= (int)$a['orden'] ?>"
-                   class="form-control form-control-ios form-control-sm" min="1" step="1" aria-label="Orden">
+                   class="form-control form-control-ios form-control-sm" min="1" step="1" aria-label="Orden"
+                   draggable="false">
             <?php if ($prevId): ?>
-              <form method="POST" class="m-0">
+              <form method="POST" class="m-0" draggable="false">
                 <?= Auth::campoCSRF() ?>
                 <input type="hidden" name="accion" value="mover_arriba">
                 <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
                 <input type="hidden" name="id_prev" value="<?= (int)$prevId ?>">
-                <button type="submit" class="btn-order-arrow" title="Mover arriba">↑</button>
+                <button type="submit" class="btn-order-arrow" title="Mover arriba" draggable="false">↑</button>
               </form>
             <?php else: ?>
               <span class="btn-order-arrow btn-order-arrow--disabled">↑</span>
             <?php endif; ?>
             <?php if ($nextId): ?>
-              <form method="POST" class="m-0">
+              <form method="POST" class="m-0" draggable="false">
                 <?= Auth::campoCSRF() ?>
                 <input type="hidden" name="accion" value="mover_abajo">
                 <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
                 <input type="hidden" name="id_next" value="<?= (int)$nextId ?>">
-                <button type="submit" class="btn-order-arrow" title="Mover abajo">↓</button>
+                <button type="submit" class="btn-order-arrow" title="Mover abajo" draggable="false">↓</button>
               </form>
             <?php else: ?>
               <span class="btn-order-arrow btn-order-arrow--disabled">↓</span>
@@ -435,16 +454,32 @@ require 'partials/header.php';
           <?php endif; ?>
         </div>
 
+        <div class="admin-card-toggle">
+          <form method="POST" draggable="false">
+            <?= Auth::campoCSRF() ?>
+            <input type="hidden" name="accion" value="toggle_activo">
+            <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+            <input type="hidden" name="activo" value="<?= $a['activo'] ? 0 : 1 ?>">
+            <button type="submit" class="admin-switch <?= $a['activo'] ? 'is-on' : '' ?>"
+                    role="switch" aria-checked="<?= $a['activo'] ? 'true' : 'false' ?>"
+                    draggable="false" title="<?= $a['activo'] ? 'Desactivar' : 'Activar' ?>">
+              <span class="admin-switch-knob"></span>
+            </button>
+          </form>
+          <span class="admin-switch-label"><?= $a['activo'] ? 'Activo' : 'Inactivo' ?></span>
+        </div>
+
         <div class="admin-card-actions">
           <a href="articulos.php?editar=<?= (int)$a['id'] ?>&pag=<?= $pagina ?>&q=<?= urlencode($busqueda) ?>&cat=<?= $filtroCategoria ?>"
+             draggable="false"
              class="btn-ios-secondary" style="text-decoration:none;">
             Editar
           </a>
-          <form method="POST">
+          <form method="POST" draggable="false">
             <?= Auth::campoCSRF() ?>
             <input type="hidden" name="accion" value="eliminar">
             <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
-            <button type="submit" class="btn-ios-danger"
+            <button type="submit" class="btn-ios-danger" draggable="false"
                     data-confirm="¿Eliminar «<?= htmlspecialchars($a['nombre'], ENT_QUOTES, 'UTF-8') ?>»?">
               Eliminar
             </button>
