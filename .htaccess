@@ -7,3 +7,10 @@ RewriteRule ^ /cat2/public/ [R=301,L]
 
 # Bloquear acceso directo a directorios sensibles
 RewriteRule ^(src|config|sql)(/.*)?$ - [F,L]
+
+# En el VPS el Document Root de este dominio apunta a esta misma carpeta
+# (compartida con otros proyectos del hosting), no a /public. Enrutar sólo
+# las páginas propias del catálogo hacia /public; todo lo demás no se toca.
+RewriteRule ^$ public/index.php [L]
+RewriteRule ^(index|categoria|producto|promociones)\.php$ public/$1.php [L]
+RewriteRule ^assets/(.*)$ public/assets/$1 [L]
