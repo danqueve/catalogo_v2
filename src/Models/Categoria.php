@@ -18,7 +18,8 @@ class Categoria
     {
         $stmt = $this->db->query(
             'SELECT id, nombre, slug, imagen, fijo FROM categorias
-             WHERE activo = 1 ORDER BY fijo DESC, orden ASC, creado_en DESC, id DESC'
+             WHERE activo = 1 AND categoria_padre_id IS NULL
+             ORDER BY fijo DESC, orden ASC, creado_en DESC, id DESC'
         );
         return $stmt->fetchAll();
     }
@@ -27,7 +28,62 @@ class Categoria
     {
         $stmt = $this->db->query(
             'SELECT id, nombre, slug, imagen FROM categorias
-             WHERE activo = 1 AND fijo = 1 ORDER BY orden ASC, creado_en DESC, id DESC'
+             WHERE activo = 1 AND fijo = 1 AND categoria_padre_id IS NULL
+             ORDER BY orden ASC, creado_en DESC, id DESC'
+        );
+        return $stmt->fetchAll();
+    }
+
+    /** Subcategorías activas de una categoría, para la página pública. */
+    public function obtenerSubcategorias(int $categoriaPadreId): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT id, nombre, slug, imagen FROM categorias
+             WHERE categoria_padre_id = ? AND activo = 1
+             ORDER BY orden ASC, creado_en DESC, id DESC'
+        );
+        $stmt->execute([$categoriaPadreId]);
+        return $stmt->fetchAll();
+    }
+
+    /** Categorías de nivel superior, para elegir como "padre" al crear una subcategoría. */
+    public function obtenerPrincipales(?int $excluirId = null): array
+    {
+        $sql = 'SELECT id, nombre FROM categorias WHERE categoria_padre_id IS NULL';
+        $params = [];
+        if ($excluirId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $excluirId;
+        }
+        $sql .= ' ORDER BY nombre ASC';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    /** Todas las categorías activas (incluye subcategorías), para elegir el destino de una promoción. */
+    public function obtenerActivasConSubcategorias(): array
+    {
+        $stmt = $this->db->query(
+            'SELECT c.id, c.nombre, c.slug, c.categoria_padre_id, p.nombre AS padre_nombre
+             FROM categorias c
+             LEFT JOIN categorias p ON p.id = c.categoria_padre_id
+             WHERE c.activo = 1
+             ORDER BY COALESCE(p.nombre, c.nombre) ASC, c.categoria_padre_id IS NULL DESC, c.nombre ASC'
+        );
+        return $stmt->fetchAll();
+    }
+
+    /** Categorías donde se pueden cargar artículos: subcategorías, o categorías sin subcategorías. */
+    public function obtenerAsignables(): array
+    {
+        $stmt = $this->db->query(
+            'SELECT c.id, c.nombre, c.categoria_padre_id, p.nombre AS padre_nombre
+             FROM categorias c
+             LEFT JOIN categorias p ON p.id = c.categoria_padre_id
+             WHERE c.categoria_padre_id IS NOT NULL
+                OR NOT EXISTS (SELECT 1 FROM categorias h WHERE h.categoria_padre_id = c.id)
+             ORDER BY COALESCE(p.nombre, c.nombre) ASC, c.categoria_padre_id IS NULL DESC, c.nombre ASC'
         );
         return $stmt->fetchAll();
     }
@@ -35,8 +91,11 @@ class Categoria
     public function obtenerTodas(): array
     {
         $stmt = $this->db->query(
-            'SELECT id, nombre, slug, imagen, activo, fijo, orden, creado_en FROM categorias
-             ORDER BY fijo DESC, orden ASC, creado_en DESC, id DESC'
+            'SELECT c.id, c.nombre, c.slug, c.imagen, c.activo, c.fijo, c.orden, c.categoria_padre_id, c.creado_en,
+                    (SELECT COUNT(*) FROM categorias h WHERE h.categoria_padre_id = c.id) AS subcategorias_count,
+                    (SELECT COUNT(*) FROM articulos a WHERE a.categoria_id = c.id) AS articulos_count
+             FROM categorias c
+             ORDER BY c.fijo DESC, c.orden ASC, c.creado_en DESC, c.id DESC'
         );
         return $stmt->fetchAll();
     }
@@ -44,7 +103,11 @@ class Categoria
     public function obtenerPorSlug(string $slug): array|false
     {
         $stmt = $this->db->prepare(
-            'SELECT id, nombre, slug, imagen FROM categorias WHERE slug = ? AND activo = 1'
+            'SELECT c.id, c.nombre, c.slug, c.imagen, c.categoria_padre_id,
+                    p.nombre AS padre_nombre, p.slug AS padre_slug
+             FROM categorias c
+             LEFT JOIN categorias p ON p.id = c.categoria_padre_id
+             WHERE c.slug = ? AND c.activo = 1'
         );
         $stmt->execute([$slug]);
         return $stmt->fetch();
@@ -53,13 +116,13 @@ class Categoria
     public function obtenerPorId(int $id): array|false
     {
         $stmt = $this->db->prepare(
-            'SELECT id, nombre, slug, imagen, activo, fijo, orden FROM categorias WHERE id = ?'
+            'SELECT id, nombre, slug, imagen, activo, fijo, orden, categoria_padre_id FROM categorias WHERE id = ?'
         );
         $stmt->execute([$id]);
         return $stmt->fetch();
     }
 
-    public function crear(string $nombre, string $slug, ?string $imagen, int $fijo = 0, ?int $orden = null): int
+    public function crear(string $nombre, string $slug, ?string $imagen, int $fijo = 0, ?int $orden = null, ?int $categoriaPadreId = null): int
     {
         if ($orden === null) {
             // Obtener el máximo orden actual para poner la nueva al final
@@ -67,66 +130,82 @@ class Categoria
             $orden = $maxOrden + 1;
         }
         $stmt = $this->db->prepare(
-            'INSERT INTO categorias (nombre, slug, imagen, fijo, orden) VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO categorias (nombre, slug, imagen, fijo, orden, categoria_padre_id) VALUES (?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$nombre, $slug, $imagen, $fijo, $orden]);
+        $stmt->execute([$nombre, $slug, $imagen, $fijo, $orden, $categoriaPadreId]);
         return (int) $this->db->lastInsertId();
     }
 
-    public function actualizar(int $id, string $nombre, string $slug, ?string $imagen, int $activo, int $fijo = 0, ?int $orden = null): bool
+    public function actualizar(int $id, string $nombre, string $slug, ?string $imagen, int $activo, int $fijo = 0, ?int $orden = null, ?int $categoriaPadreId = null): bool
     {
-        if ($orden !== null) {
-            if ($imagen !== null) {
-                $stmt = $this->db->prepare(
-                    'UPDATE categorias SET nombre=?, slug=?, imagen=?, activo=?, fijo=?, orden=? WHERE id=?'
-                );
-                return $stmt->execute([$nombre, $slug, $imagen, $activo, $fijo, $orden, $id]);
-            }
-            $stmt = $this->db->prepare(
-                'UPDATE categorias SET nombre=?, slug=?, activo=?, fijo=?, orden=? WHERE id=?'
-            );
-            return $stmt->execute([$nombre, $slug, $activo, $fijo, $orden, $id]);
-        }
+        $campos  = ['nombre = ?', 'slug = ?', 'activo = ?', 'fijo = ?', 'categoria_padre_id = ?'];
+        $valores = [$nombre, $slug, $activo, $fijo, $categoriaPadreId];
 
         if ($imagen !== null) {
-            $stmt = $this->db->prepare(
-                'UPDATE categorias SET nombre=?, slug=?, imagen=?, activo=?, fijo=? WHERE id=?'
-            );
-            return $stmt->execute([$nombre, $slug, $imagen, $activo, $fijo, $id]);
+            $campos[]  = 'imagen = ?';
+            $valores[] = $imagen;
         }
-        $stmt = $this->db->prepare(
-            'UPDATE categorias SET nombre=?, slug=?, activo=?, fijo=? WHERE id=?'
-        );
-        return $stmt->execute([$nombre, $slug, $activo, $fijo, $id]);
+        if ($orden !== null) {
+            $campos[]  = 'orden = ?';
+            $valores[] = $orden;
+        }
+        $valores[] = $id;
+
+        $stmt = $this->db->prepare('UPDATE categorias SET ' . implode(', ', $campos) . ' WHERE id = ?');
+        return $stmt->execute($valores);
     }
 
     /**
-     * Normaliza el orden de las categorías para que sean consecutivos y sin duplicados
+     * Normaliza el orden de las categorías para que sean consecutivos y sin duplicados.
+     * Opera sólo dentro de un mismo grupo: las de nivel superior (por separado fijas/normales),
+     * o las subcategorías de un mismo padre — nunca mezcla grupos distintos.
      */
-    public function normalizarOrdenes(): void
+    public function normalizarOrdenes(?int $categoriaPadreId = null): void
     {
-        // Normalizar para fijas (fijo = 1)
-        $stmt = $this->db->query('SELECT id FROM categorias WHERE fijo = 1 ORDER BY orden ASC, creado_en DESC, id DESC');
-        $fijas = $stmt->fetchAll(PDO::FETCH_COLUMN);
         $upd = $this->db->prepare('UPDATE categorias SET orden = ? WHERE id = ?');
-        foreach ($fijas as $index => $id) {
+
+        if ($categoriaPadreId !== null) {
+            $stmt = $this->db->prepare(
+                'SELECT id FROM categorias WHERE categoria_padre_id = ?
+                 ORDER BY orden ASC, creado_en DESC, id DESC'
+            );
+            $stmt->execute([$categoriaPadreId]);
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $index => $id) {
+                $upd->execute([$index + 1, $id]);
+            }
+            return;
+        }
+
+        // Nivel superior: normalizar fijas y normales por separado
+        $stmt = $this->db->query(
+            'SELECT id FROM categorias WHERE categoria_padre_id IS NULL AND fijo = 1
+             ORDER BY orden ASC, creado_en DESC, id DESC'
+        );
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $index => $id) {
             $upd->execute([$index + 1, $id]);
         }
 
-        // Normalizar para normales (fijo = 0)
-        $stmt = $this->db->query('SELECT id FROM categorias WHERE fijo = 0 ORDER BY orden ASC, creado_en DESC, id DESC');
-        $normales = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        foreach ($normales as $index => $id) {
+        $stmt = $this->db->query(
+            'SELECT id FROM categorias WHERE categoria_padre_id IS NULL AND fijo = 0
+             ORDER BY orden ASC, creado_en DESC, id DESC'
+        );
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $index => $id) {
             $upd->execute([$index + 1, $id]);
         }
     }
 
     /**
-     * Intercambia el orden de dos categorías (para mover arriba/abajo)
+     * Intercambia el orden de dos categorías (para mover arriba/abajo).
+     * Ambas deben pertenecer al mismo grupo (mismo padre, o ambas de nivel superior).
      */
     public function intercambiarOrden(int $idA, int $idB): void
     {
-        $this->normalizarOrdenes();
+        $stmt = $this->db->prepare('SELECT categoria_padre_id FROM categorias WHERE id = ?');
+        $stmt->execute([$idA]);
+        $padreId = $stmt->fetchColumn();
+        $padreId = ($padreId !== false && $padreId !== null) ? (int)$padreId : null;
+
+        $this->normalizarOrdenes($padreId);
 
         $stmt = $this->db->prepare('SELECT id, orden FROM categorias WHERE id IN (?,?)');
         $stmt->execute([$idA, $idB]);

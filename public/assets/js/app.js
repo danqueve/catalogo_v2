@@ -146,6 +146,18 @@ document.querySelectorAll('.btn-wa[data-wa-text]').forEach(btn => {
   }
 })();
 
+// ── Admin: ocultar "Fijar en inicio" si es subcategoría ──
+(function () {
+  const padreSelect = document.getElementById('categoriaPadreSelect');
+  const fijoWrap     = document.getElementById('fijoWrap');
+  if (!padreSelect || !fijoWrap) return;
+
+  function toggle() {
+    fijoWrap.style.display = padreSelect.value ? 'none' : '';
+  }
+  padreSelect.addEventListener('change', toggle);
+})();
+
 // ── Admin: slug automático desde nombre ──────────────────
 (function () {
   const nombreInput = document.getElementById('nombreInput');

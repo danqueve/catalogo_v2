@@ -157,7 +157,7 @@ $totalPaginas    = max(1, (int)ceil($total / $porPagina));
 $pagina          = min($pagina, $totalPaginas);
 $offset          = ($pagina - 1) * $porPagina;
 $articulos       = $artModel->obtenerPaginados($porPagina, $offset, $filtroCategoria, $busqueda);
-$categorias      = $catModel->obtenerTodas();
+$categorias      = $catModel->obtenerAsignables();
 
 $tituloAdmin = 'Artículos';
 require 'partials/header.php';
@@ -201,7 +201,7 @@ require 'partials/header.php';
           <?php foreach ($categorias as $c): ?>
             <option value="<?= (int)$c['id'] ?>"
               <?= (isset($editando['categoria_id']) && $editando['categoria_id'] == $c['id']) ? 'selected' : '' ?>>
-              <?= htmlspecialchars($c['nombre'], ENT_QUOTES, 'UTF-8') ?>
+              <?= htmlspecialchars($c['padre_nombre'] ? $c['padre_nombre'] . ' › ' . $c['nombre'] : $c['nombre'], ENT_QUOTES, 'UTF-8') ?>
             </option>
           <?php endforeach; ?>
         </select>
@@ -347,7 +347,7 @@ require 'partials/header.php';
         <option value="0">Todas las categorías</option>
         <?php foreach ($categorias as $c): ?>
           <option value="<?= (int)$c['id'] ?>" <?= $filtroCategoria === (int)$c['id'] ? 'selected' : '' ?>>
-            <?= htmlspecialchars($c['nombre'], ENT_QUOTES, 'UTF-8') ?>
+            <?= htmlspecialchars($c['padre_nombre'] ? $c['padre_nombre'] . ' › ' . $c['nombre'] : $c['nombre'], ENT_QUOTES, 'UTF-8') ?>
           </option>
         <?php endforeach; ?>
       </select>

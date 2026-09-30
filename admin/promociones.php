@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $promociones = Promociones::obtenerParaAdmin();
-$categorias = $categoriaModel->obtenerActivas();
+$categorias = $categoriaModel->obtenerActivasConSubcategorias();
 $tituloAdmin = 'Promociones';
 require 'partials/header.php';
 ?>
@@ -98,7 +98,7 @@ require 'partials/header.php';
         <option value="">Seleccionar…</option>
         <?php foreach ($categorias as $categoria): ?>
           <option value="<?= htmlspecialchars($categoria['slug'], ENT_QUOTES, 'UTF-8') ?>">
-            <?= htmlspecialchars($categoria['nombre'], ENT_QUOTES, 'UTF-8') ?>
+            <?= htmlspecialchars($categoria['padre_nombre'] ? $categoria['padre_nombre'] . ' › ' . $categoria['nombre'] : $categoria['nombre'], ENT_QUOTES, 'UTF-8') ?>
           </option>
         <?php endforeach; ?>
       </select>
@@ -144,7 +144,7 @@ require 'partials/header.php';
                     <?php foreach ($categorias as $categoria): ?>
                       <option value="<?= htmlspecialchars($categoria['slug'], ENT_QUOTES, 'UTF-8') ?>"
                         <?= $promocion['categoria_slug'] === $categoria['slug'] ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($categoria['nombre'], ENT_QUOTES, 'UTF-8') ?>
+                        <?= htmlspecialchars($categoria['padre_nombre'] ? $categoria['padre_nombre'] . ' › ' . $categoria['nombre'] : $categoria['nombre'], ENT_QUOTES, 'UTF-8') ?>
                       </option>
                     <?php endforeach; ?>
                   </select>

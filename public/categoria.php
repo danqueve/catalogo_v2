@@ -21,11 +21,15 @@ if (!$categoria) {
     exit;
 }
 
-$articuloModel = new Articulo();
-$articulos     = $articuloModel->obtenerPorCategoria((int)$categoria['id']);
+$subcategorias = $categoriaModel->obtenerSubcategorias((int)$categoria['id']);
 
-$n       = count($articulos);
-$nLabel  = $n . ' artículo' . ($n !== 1 ? 's' : '');
+$articuloModel = new Articulo();
+$articulos     = empty($subcategorias) ? $articuloModel->obtenerPorCategoria((int)$categoria['id']) : [];
+
+$n       = !empty($subcategorias) ? count($subcategorias) : count($articulos);
+$nLabel  = !empty($subcategorias)
+    ? $n . ' subcategoría' . ($n !== 1 ? 's' : '')
+    : $n . ' artículo' . ($n !== 1 ? 's' : '');
 
 $ogTitle = htmlspecialchars($categoria['nombre'], ENT_QUOTES, 'UTF-8') . ' — Imperio Comercial';
 $ogDesc  = 'Mirá todos los productos de ' . htmlspecialchars($categoria['nombre'], ENT_QUOTES, 'UTF-8') . ' con precios y financiación.';
@@ -76,6 +80,11 @@ function fmt(float $n): string {
     </svg>
   </button>
   <div class="ic-header-back-info">
+    <?php if (!empty($categoria['padre_nombre'])): ?>
+      <a href="categoria.php?slug=<?= htmlspecialchars($categoria['padre_slug'], ENT_QUOTES, 'UTF-8') ?>" class="ic-breadcrumb">
+        ‹ <?= htmlspecialchars($categoria['padre_nombre'], ENT_QUOTES, 'UTF-8') ?>
+      </a>
+    <?php endif; ?>
     <h1 class="ic-page-title"><?= htmlspecialchars($categoria['nombre'], ENT_QUOTES, 'UTF-8') ?></h1>
     <p class="ic-page-subtitle"><?= $nLabel ?></p>
   </div>
@@ -87,6 +96,37 @@ function fmt(float $n): string {
     </svg>
   </a>
 </header>
+
+<?php if (!empty($subcategorias)): ?>
+<!-- GRILLA SUBCATEGORÍAS -->
+<section class="ic-section">
+  <div class="ic-cat-grid">
+    <?php foreach ($subcategorias as $sub): ?>
+    <article class="ic-cat-card">
+      <a href="categoria.php?slug=<?= htmlspecialchars($sub['slug'], ENT_QUOTES, 'UTF-8') ?>"
+         class="ic-cat-main" aria-label="Ver categoría <?= htmlspecialchars($sub['nombre'], ENT_QUOTES, 'UTF-8') ?>">
+        <div class="ic-cat-img">
+        <?php if (!empty($sub['imagen'])): ?>
+          <img src="<?= UPLOAD_URL . htmlspecialchars($sub['imagen'], ENT_QUOTES, 'UTF-8') ?>"
+               alt="<?= htmlspecialchars($sub['nombre'], ENT_QUOTES, 'UTF-8') ?>"
+               loading="lazy">
+        <?php else: ?>
+          <div class="ic-cat-img-ph">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+          </div>
+        <?php endif; ?>
+        </div>
+        <span class="ic-cat-name"><?= htmlspecialchars($sub['nombre'], ENT_QUOTES, 'UTF-8') ?></span>
+      </a>
+    </article>
+    <?php endforeach; ?>
+  </div>
+</section>
+<?php else: ?>
 
 <!-- CHIPS FILTRO -->
 <div class="ic-chips-outer">
@@ -147,6 +187,7 @@ function fmt(float $n): string {
   </article>
   <?php endforeach; ?>
 </div>
+<?php endif; ?>
 <?php endif; ?>
 
 <?php include __DIR__ . '/partials/image-viewer.php'; ?>

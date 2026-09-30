@@ -658,6 +658,27 @@ a { color: var(--accent); text-decoration: none; }
   font-size: .8rem;
 }
 
+/* ── Admin: árbol de categorías / subcategorías ────── */
+.admin-cat-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.admin-subcat-block {
+  margin-top: 10px;
+  margin-left: 22px;
+  padding-left: 16px;
+  border-left: 2px solid var(--border);
+}
+.admin-subcat-label {
+  font-size: .76rem;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin: 0 0 8px;
+}
+
 /* ── Admin: hero del dashboard ──────────────────────── */
 .admin-hero {
   display: flex;

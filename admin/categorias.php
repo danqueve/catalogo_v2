@@ -20,11 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         /* Crear */
         if ($accion === 'crear') {
-            $nombre = trim($_POST['nombre'] ?? '');
-            $slug   = trim($_POST['slug']   ?? '') ?: Categoria::slugify($nombre);
-            $fijo   = isset($_POST['fijo']) ? 1 : 0;
-            $orden  = (isset($_POST['orden']) && $_POST['orden'] !== '') ? (int)$_POST['orden'] : null;
-            $imagen = null;
+            $nombre       = trim($_POST['nombre'] ?? '');
+            $slug         = trim($_POST['slug']   ?? '') ?: Categoria::slugify($nombre);
+            $fijo         = isset($_POST['fijo']) ? 1 : 0;
+            $orden        = (isset($_POST['orden']) && $_POST['orden'] !== '') ? (int)$_POST['orden'] : null;
+            $categoriaPadreId = (!empty($_POST['categoria_padre_id'])) ? (int)$_POST['categoria_padre_id'] : null;
+            $imagen       = null;
 
             if (empty($nombre)) {
                 $msg = 'El nombre es obligatorio.'; $msgTipo = 'danger';
@@ -33,8 +34,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!empty($_FILES['imagen']['name'])) {
                         $imagen = Upload::imagen($_FILES['imagen'], UPLOAD_DIR);
                     }
-                    $catModel->crear($nombre, $slug, $imagen, $fijo, $orden);
-                    $msg = 'Categoría creada correctamente.';
+                    $catModel->crear($nombre, $slug, $imagen, $fijo, $orden, $categoriaPadreId);
+                    $msg = $categoriaPadreId ? 'Subcategoría creada correctamente.' : 'Categoría creada correctamente.';
                 } catch (\RuntimeException $e) {
                     $msg = $e->getMessage(); $msgTipo = 'danger';
                 }
@@ -49,10 +50,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $activo = (int)($_POST['activo'] ?? 1);
             $fijo   = isset($_POST['fijo']) ? 1 : 0;
             $orden  = ($_POST['orden'] !== '' && $_POST['orden'] !== null) ? (int)$_POST['orden'] : null;
+            $categoriaPadreId = (!empty($_POST['categoria_padre_id'])) ? (int)$_POST['categoria_padre_id'] : null;
             $imagen = null;
 
             if (!$id || empty($nombre)) {
                 $msg = 'Datos inválidos.'; $msgTipo = 'danger';
+            } elseif ($categoriaPadreId === $id) {
+                $msg = 'Una categoría no puede ser su propia categoría padre.'; $msgTipo = 'danger';
+            } elseif ($categoriaPadreId !== null && !empty($catModel->obtenerSubcategorias($id))) {
+                $msg = 'Esta categoría ya tiene subcategorías propias: no puede convertirse en subcategoría de otra.';
+                $msgTipo = 'danger';
             } else {
                 try {
                     if (!empty($_FILES['imagen']['name'])) {
@@ -61,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($vieja && $vieja['imagen']) Upload::borrar(UPLOAD_DIR, $vieja['imagen']);
                         $imagen = Upload::imagen($_FILES['imagen'], UPLOAD_DIR);
                     }
-                    $catModel->actualizar($id, $nombre, $slug, $imagen, $activo, $fijo, $orden);
+                    $catModel->actualizar($id, $nombre, $slug, $imagen, $activo, $fijo, $orden, $categoriaPadreId);
                     $msg = 'Categoría actualizada.';
                 } catch (\RuntimeException $e) {
                     $msg = $e->getMessage(); $msgTipo = 'danger';
@@ -119,8 +126,24 @@ if (isset($_GET['editar'])) {
 $categorias  = $catModel->obtenerTodas();
 $maxOrden = 0;
 foreach ($categorias as $cat) {
-    $maxOrden = max($maxOrden, (int)$cat['orden']);
+    if ($cat['categoria_padre_id'] === null) {
+        $maxOrden = max($maxOrden, (int)$cat['orden']);
+    }
 }
+
+/* Agrupar en principales + subcategorías por padre, para listar con jerarquía */
+$principales = [];
+$subcategoriasPorPadre = [];
+foreach ($categorias as $cat) {
+    if ($cat['categoria_padre_id'] === null) {
+        $principales[] = $cat;
+    } else {
+        $subcategoriasPorPadre[$cat['categoria_padre_id']][] = $cat;
+    }
+}
+
+$categoriasPrincipales = $catModel->obtenerPrincipales($editando['id'] ?? null);
+
 $tituloAdmin = 'Categorías';
 require 'partials/header.php';
 ?>
@@ -170,7 +193,20 @@ require 'partials/header.php';
         </select>
       </div>
       <?php endif; ?>
-      <div class="col-12">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold" style="font-size:.85rem;">Categoría padre</label>
+        <select name="categoria_padre_id" id="categoriaPadreSelect" class="form-select form-control-ios">
+          <option value="">— Ninguna (categoría principal) —</option>
+          <?php foreach ($categoriasPrincipales as $p): ?>
+            <option value="<?= (int)$p['id'] ?>"
+              <?= (int)($editando['categoria_padre_id'] ?? 0) === (int)$p['id'] ? 'selected' : '' ?>>
+              <?= htmlspecialchars($p['nombre'], ENT_QUOTES, 'UTF-8') ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+        <small class="text-muted">Si elegís una, esta será una subcategoría de ella.</small>
+      </div>
+      <div class="col-12" id="fijoWrap" <?= !empty($editando['categoria_padre_id']) ? 'style="display:none;"' : '' ?>>
         <div class="form-check mt-1">
           <input class="form-check-input" type="checkbox" name="fijo" id="fijoCheck" value="1"
                  <?= ($editando['fijo'] ?? 0) ? 'checked' : '' ?>>
@@ -229,15 +265,15 @@ require 'partials/header.php';
   <button type="submit" form="loteForm" class="btn-ios-primary btn-sm" style="padding:.4rem .9rem; font-size:.82rem;">Guardar Orden</button>
 </div>
 
-<!-- Grilla de categorías -->
-<?php if (empty($categorias)): ?>
-  <div class="card-ios p-4 text-center text-muted" style="font-size:.9rem;">Aún no hay categorías.</div>
-<?php else: ?>
-<div class="admin-grid">
-  <?php foreach ($categorias as $i => $c): ?>
-    <?php
-      $prevId = ($i > 0 && $categorias[$i - 1]['fijo'] == $c['fijo']) ? $categorias[$i - 1]['id'] : null;
-      $nextId = ($i < count($categorias) - 1 && $categorias[$i + 1]['fijo'] == $c['fijo']) ? $categorias[$i + 1]['id'] : null;
+<?php
+/** Renderiza una tarjeta de categoría o subcategoría (misma estructura para ambas). */
+function renderCategoriaCard(array $c, ?int $prevId, ?int $nextId): void
+{
+    $confirmMsg = '¿Eliminar la categoría «' . $c['nombre'] . '»?';
+    $confirmMsg .= !empty($c['subcategorias_count'])
+        ? ' Se eliminarán también sus ' . (int)$c['subcategorias_count'] . ' subcategoría(s) y todos los artículos asociados.'
+        : ' Se eliminarán todos sus artículos.';
+    $confirmMsg = htmlspecialchars($confirmMsg, ENT_QUOTES, 'UTF-8');
     ?>
     <article class="admin-card <?= $c['activo'] ? '' : 'admin-card--inactive' ?>">
       <?php if ($c['imagen']): ?>
@@ -298,13 +334,53 @@ require 'partials/header.php';
             <?= Auth::campoCSRF() ?>
             <input type="hidden" name="accion" value="eliminar">
             <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
-            <button type="submit" class="btn-ios-danger"
-                    data-confirm="¿Eliminar la categoría «<?= htmlspecialchars($c['nombre'], ENT_QUOTES, 'UTF-8') ?>»? Se eliminarán todos sus artículos.">
+            <button type="submit" class="btn-ios-danger" data-confirm="<?= $confirmMsg ?>">
               Eliminar
             </button>
           </form>
         </div>
     </article>
+    <?php
+}
+?>
+
+<!-- Árbol de categorías -->
+<?php if (empty($principales)): ?>
+  <div class="card-ios p-4 text-center text-muted" style="font-size:.9rem;">Aún no hay categorías.</div>
+<?php else: ?>
+<div class="admin-cat-tree">
+  <?php foreach ($principales as $i => $c): ?>
+    <?php
+      $prevId = ($i > 0 && $principales[$i - 1]['fijo'] == $c['fijo']) ? $principales[$i - 1]['id'] : null;
+      $nextId = ($i < count($principales) - 1 && $principales[$i + 1]['fijo'] == $c['fijo']) ? $principales[$i + 1]['id'] : null;
+      $hijas  = $subcategoriasPorPadre[$c['id']] ?? [];
+    ?>
+    <div class="admin-cat-group">
+      <div class="admin-grid">
+        <?php renderCategoriaCard($c, $prevId, $nextId); ?>
+      </div>
+
+      <?php if (!empty($c['subcategorias_count']) && !empty($c['articulos_count'])): ?>
+        <div class="alert-ios alert-ios-danger mt-2" style="font-size:.82rem;">
+          ⚠ Esta categoría tiene <?= (int)$c['articulos_count'] ?> artículo(s) asignados directamente. No se mostrarán en el catálogo mientras tenga subcategorías — reasignalos a una subcategoría desde Artículos.
+        </div>
+      <?php endif; ?>
+
+      <?php if (!empty($hijas)): ?>
+        <div class="admin-subcat-block">
+          <p class="admin-subcat-label">Subcategorías de <?= htmlspecialchars($c['nombre'], ENT_QUOTES, 'UTF-8') ?></p>
+          <div class="admin-grid">
+            <?php foreach ($hijas as $j => $h): ?>
+              <?php
+                $prevIdH = ($j > 0) ? $hijas[$j - 1]['id'] : null;
+                $nextIdH = ($j < count($hijas) - 1) ? $hijas[$j + 1]['id'] : null;
+                renderCategoriaCard($h, $prevIdH, $nextIdH);
+              ?>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      <?php endif; ?>
+    </div>
   <?php endforeach; ?>
 </div>
 <?php endif; ?>
