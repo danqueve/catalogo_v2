@@ -370,118 +370,90 @@ require 'partials/header.php';
     </div>
   <?php endif; ?>
 
-  <!-- Tabla -->
-  <div style="overflow-x:auto;">
-    <table class="table table-hover mb-0" style="min-width:600px;">
-      <thead>
-        <tr>
-          <th style="width:<?= $filtroCategoria > 0 ? '90px' : '60px' ?>;">Orden</th>
-          <th>Imagen</th>
-          <th>Nombre</th>
-          <th>Categoría</th>
-          <th>Semanales</th>
-          <th>Mensuales</th>
-          <th>Estado</th>
-          <th style="width:160px;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php if (empty($articulos)): ?>
-          <tr><td colspan="8" class="text-center text-muted py-4">Sin resultados.</td></tr>
-        <?php else: ?>
-          <?php foreach ($articulos as $i => $a): ?>
-            <?php
-              $prevId = ($i > 0) ? $articulos[$i - 1]['id'] : null;
-              $nextId = ($i < count($articulos) - 1) ? $articulos[$i + 1]['id'] : null;
-            ?>
-            <tr>
-              <td>
-                <?php if ($filtroCategoria > 0): ?>
-                  <div class="d-flex flex-column align-items-center gap-1">
-                    <input type="number" form="loteForm" name="ordenes[<?= (int)$a['id'] ?>]" value="<?= (int)$a['orden'] ?>" 
-                           class="form-control form-control-ios form-control-sm text-center" 
-                           style="width:55px; padding:2px; font-size:.8rem; font-weight:bold; margin-bottom: 2px;"
-                           min="1" step="1">
-                    <div class="d-flex gap-1">
-                      <?php if ($prevId): ?>
-                        <form method="POST" class="m-0">
-                          <?= Auth::campoCSRF() ?>
-                          <input type="hidden" name="accion" value="mover_arriba">
-                          <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
-                          <input type="hidden" name="id_prev" value="<?= (int)$prevId ?>">
-                          <button type="submit" class="btn-order-arrow" title="Mover arriba">↑</button>
-                        </form>
-                      <?php else: ?>
-                        <span class="btn-order-arrow btn-order-arrow--disabled">↑</span>
-                      <?php endif; ?>
-                      <?php if ($nextId): ?>
-                        <form method="POST" class="m-0">
-                          <?= Auth::campoCSRF() ?>
-                          <input type="hidden" name="accion" value="mover_abajo">
-                          <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
-                          <input type="hidden" name="id_next" value="<?= (int)$nextId ?>">
-                          <button type="submit" class="btn-order-arrow" title="Mover abajo">↓</button>
-                        </form>
-                      <?php else: ?>
-                        <span class="btn-order-arrow btn-order-arrow--disabled">↓</span>
-                      <?php endif; ?>
-                    </div>
-                  </div>
-                <?php else: ?>
-                  <span class="fw-bold text-muted" style="font-size:.8rem;" title="Filtra por una categoría para ordenar"><?= (int)$a['orden'] ?></span>
-                <?php endif; ?>
-              </td>
-              <td>
-                <img src="<?= htmlspecialchars(UPLOAD_URL . rawurlencode($a['imagen']), ENT_QUOTES, 'UTF-8') ?>"
-                     class="img-thumb" alt="">
-              </td>
-              <td class="fw-semibold"><?= htmlspecialchars($a['nombre'], ENT_QUOTES, 'UTF-8') ?></td>
-              <td style="font-size:.82rem;color:var(--text-2);">
-                <?= htmlspecialchars($a['categoria_nombre'], ENT_QUOTES, 'UTF-8') ?>
-              </td>
-              <td style="font-size:.82rem;">
-                <?php if ($a['cuotas_sem_cant']): ?>
-                  <?= (int)$a['cuotas_sem_cant'] ?> × $<?= number_format((float)$a['cuotas_sem_monto'],0,',','.') ?>
-                <?php else: ?><span class="text-muted">—</span><?php endif; ?>
-              </td>
-              <td style="font-size:.82rem;">
-                <?php if ($a['cuotas_mes_cant']): ?>
-                  <?= (int)$a['cuotas_mes_cant'] ?> × $<?= number_format((float)$a['cuotas_mes_monto'],0,',','.') ?>
-                <?php else: ?><span class="text-muted">—</span><?php endif; ?>
-              </td>
-              <td>
-                <?php if ($a['activo']): ?>
-                  <span class="badge" style="background:rgba(52,199,89,.15);color:#1a7a34;
-                        border-radius:var(--radius-pill);padding:.25rem .6rem;font-size:.75rem;">Activo</span>
-                <?php else: ?>
-                  <span class="badge" style="background:rgba(255,59,48,.1);color:#c0392b;
-                        border-radius:var(--radius-pill);padding:.25rem .6rem;font-size:.75rem;">Inactivo</span>
-                <?php endif; ?>
-              </td>
-              <td>
-                <div class="d-flex gap-2">
-                  <a href="articulos.php?editar=<?= (int)$a['id'] ?>&pag=<?= $pagina ?>&q=<?= urlencode($busqueda) ?>&cat=<?= $filtroCategoria ?>"
-                     class="btn-ios-secondary" style="text-decoration:none;padding:.35rem .7rem;font-size:.8rem;">
-                    Editar
-                  </a>
-                  <form method="POST" class="m-0">
-                    <?= Auth::campoCSRF() ?>
-                    <input type="hidden" name="accion" value="eliminar">
-                    <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
-                    <button type="submit" class="btn-ios-danger"
-                            style="padding:.35rem .7rem;font-size:.8rem;"
-                            data-confirm="¿Eliminar «<?= htmlspecialchars($a['nombre'], ENT_QUOTES, 'UTF-8') ?>»?">
-                      Eliminar
-                    </button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-          <?php endforeach; ?>
-        <?php endif; ?>
-      </tbody>
-    </table>
+  <!-- Grilla de artículos -->
+  <?php if (empty($articulos)): ?>
+    <div class="text-center text-muted py-4">Sin resultados.</div>
+  <?php else: ?>
+  <div class="admin-grid">
+    <?php foreach ($articulos as $i => $a): ?>
+      <?php
+        $prevId = ($i > 0) ? $articulos[$i - 1]['id'] : null;
+        $nextId = ($i < count($articulos) - 1) ? $articulos[$i + 1]['id'] : null;
+      ?>
+      <article class="admin-card <?= $a['activo'] ? '' : 'admin-card--inactive' ?>">
+        <div class="admin-card-media">
+          <img src="<?= htmlspecialchars(UPLOAD_URL . rawurlencode($a['imagen']), ENT_QUOTES, 'UTF-8') ?>" alt="">
+          <span class="admin-card-status <?= $a['activo'] ? 'is-active' : 'is-inactive' ?>">
+            <?= $a['activo'] ? 'Activo' : 'Inactivo' ?>
+          </span>
+        </div>
+
+        <div class="admin-card-body">
+          <h3 class="admin-card-title"><?= htmlspecialchars($a['nombre'], ENT_QUOTES, 'UTF-8') ?></h3>
+          <p class="admin-card-meta"><?= htmlspecialchars($a['categoria_nombre'], ENT_QUOTES, 'UTF-8') ?></p>
+          <div class="admin-card-pricing">
+            <?php if ($a['cuotas_sem_cant']): ?>
+              <span class="admin-card-pill"><?= (int)$a['cuotas_sem_cant'] ?> sem. × $<?= number_format((float)$a['cuotas_sem_monto'],0,',','.') ?></span>
+            <?php endif; ?>
+            <?php if ($a['cuotas_mes_cant']): ?>
+              <span class="admin-card-pill"><?= (int)$a['cuotas_mes_cant'] ?> mes. × $<?= number_format((float)$a['cuotas_mes_monto'],0,',','.') ?></span>
+            <?php endif; ?>
+            <?php if ($a['precio_contado']): ?>
+              <span class="admin-card-pill admin-card-pill--accent">Contado $<?= number_format((float)$a['precio_contado'],0,',','.') ?></span>
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <div class="admin-card-order">
+          <?php if ($filtroCategoria > 0): ?>
+            <input type="number" form="loteForm" name="ordenes[<?= (int)$a['id'] ?>]" value="<?= (int)$a['orden'] ?>"
+                   class="form-control form-control-ios form-control-sm" min="1" step="1" aria-label="Orden">
+            <?php if ($prevId): ?>
+              <form method="POST" class="m-0">
+                <?= Auth::campoCSRF() ?>
+                <input type="hidden" name="accion" value="mover_arriba">
+                <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+                <input type="hidden" name="id_prev" value="<?= (int)$prevId ?>">
+                <button type="submit" class="btn-order-arrow" title="Mover arriba">↑</button>
+              </form>
+            <?php else: ?>
+              <span class="btn-order-arrow btn-order-arrow--disabled">↑</span>
+            <?php endif; ?>
+            <?php if ($nextId): ?>
+              <form method="POST" class="m-0">
+                <?= Auth::campoCSRF() ?>
+                <input type="hidden" name="accion" value="mover_abajo">
+                <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+                <input type="hidden" name="id_next" value="<?= (int)$nextId ?>">
+                <button type="submit" class="btn-order-arrow" title="Mover abajo">↓</button>
+              </form>
+            <?php else: ?>
+              <span class="btn-order-arrow btn-order-arrow--disabled">↓</span>
+            <?php endif; ?>
+          <?php else: ?>
+            <span title="Filtra por una categoría para ordenar">Orden: <?= (int)$a['orden'] ?></span>
+          <?php endif; ?>
+        </div>
+
+        <div class="admin-card-actions">
+          <a href="articulos.php?editar=<?= (int)$a['id'] ?>&pag=<?= $pagina ?>&q=<?= urlencode($busqueda) ?>&cat=<?= $filtroCategoria ?>"
+             class="btn-ios-secondary" style="text-decoration:none;">
+            Editar
+          </a>
+          <form method="POST">
+            <?= Auth::campoCSRF() ?>
+            <input type="hidden" name="accion" value="eliminar">
+            <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+            <button type="submit" class="btn-ios-danger"
+                    data-confirm="¿Eliminar «<?= htmlspecialchars($a['nombre'], ENT_QUOTES, 'UTF-8') ?>»?">
+              Eliminar
+            </button>
+          </form>
+        </div>
+      </article>
+    <?php endforeach; ?>
   </div>
+  <?php endif; ?>
 
   <!-- Paginación -->
   <?php if ($totalPaginas > 1): ?>

@@ -46,49 +46,8 @@ $csrf = Auth::generarCsrf();
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
         crossorigin="anonymous">
   <link rel="stylesheet" href="../public/assets/css/app.css<?= asset_version(__DIR__ . '/../public/assets/css/app.css') ?>">
-  <style>
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg);
-    }
-    .login-card {
-      background: var(--surface);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-lg);
-      padding: 2.5rem 2rem;
-      width: 100%;
-      max-width: 380px;
-    }
-    .login-logo {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .login-logo img {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      object-fit: cover;
-      box-shadow: var(--shadow-md);
-    }
-    .login-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: .25rem;
-      color: var(--text);
-    }
-    .login-sub {
-      font-size: .85rem;
-      text-align: center;
-      color: var(--text-2);
-      margin-bottom: 1.75rem;
-    }
-  </style>
 </head>
-<body>
+<body class="admin-login-page">
   <div class="login-card">
     <div class="login-logo">
       <img src="../public/assets/img/logo.png" alt="Logo">

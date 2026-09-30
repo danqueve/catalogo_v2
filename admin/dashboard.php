@@ -13,30 +13,31 @@ $tituloAdmin = 'Dashboard';
 require 'partials/header.php';
 ?>
 
-<h1 class="section-title mb-1">Dashboard</h1>
-<p class="section-subtitle">Bienvenido, <?= htmlspecialchars($_SESSION['admin_nombre'], ENT_QUOTES, 'UTF-8') ?>.</p>
-
-<div class="row g-3 mt-1">
-  <div class="col-6 col-md-4">
-    <div class="card-ios p-3 text-center">
-      <div style="font-size:2rem;font-weight:700;color:var(--accent);"><?= (int)$totalCat ?></div>
-      <div style="font-size:.85rem;color:var(--text-2);">Categorías activas</div>
-    </div>
+<div class="admin-hero mb-4">
+  <div class="admin-hero-text">
+    <p class="section-subtitle mb-1" style="margin-bottom:.15rem;">
+      Hola, <?= htmlspecialchars($_SESSION['admin_nombre'], ENT_QUOTES, 'UTF-8') ?>
+    </p>
+    <h1 class="section-title mb-3">¿Qué cargamos hoy?</h1>
+    <a href="articulos.php" class="btn-ios-primary" style="text-decoration:none;">
+      + Nuevo artículo
+    </a>
   </div>
-  <div class="col-6 col-md-4">
-    <div class="card-ios p-3 text-center">
-      <div style="font-size:2rem;font-weight:700;color:var(--wa);"><?= (int)$totalArt ?></div>
-      <div style="font-size:.85rem;color:var(--text-2);">Artículos activos</div>
+  <div class="admin-hero-stats">
+    <div class="admin-hero-stat">
+      <div class="admin-hero-stat-num"><?= (int)$totalArt ?></div>
+      <div class="admin-hero-stat-label">Artículos</div>
+    </div>
+    <div class="admin-hero-stat">
+      <div class="admin-hero-stat-num"><?= (int)$totalCat ?></div>
+      <div class="admin-hero-stat-label">Categorías</div>
     </div>
   </div>
 </div>
 
-<div class="d-flex gap-2 flex-wrap mt-4">
-  <a href="categorias.php" class="btn-ios-primary" style="text-decoration:none;">
+<div class="d-flex gap-2 flex-wrap">
+  <a href="categorias.php" class="btn-ios-secondary" style="text-decoration:none;">
     + Nueva categoría
-  </a>
-  <a href="articulos.php" class="btn-ios-secondary" style="text-decoration:none;">
-    + Nuevo artículo
   </a>
   <a href="promociones.php" class="btn-ios-secondary" style="text-decoration:none;">
     Administrar promociones

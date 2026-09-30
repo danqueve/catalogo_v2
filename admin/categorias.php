@@ -229,118 +229,84 @@ require 'partials/header.php';
   <button type="submit" form="loteForm" class="btn-ios-primary btn-sm" style="padding:.4rem .9rem; font-size:.82rem;">Guardar Orden</button>
 </div>
 
-<!-- Tabla de categorías -->
-<div class="table-ios">
-  <table class="table table-hover mb-0">
-    <thead>
-      <tr>
-        <th style="width:90px;">Orden</th>
-        <th>Imagen</th>
-        <th>Nombre</th>
-        <th>Slug</th>
-        <th>Estado</th>
-        <th>Fijo</th>
-        <th style="width:160px;">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php if (empty($categorias)): ?>
-        <tr><td colspan="7" class="text-center text-muted py-4">Aún no hay categorías.</td></tr>
+<!-- Grilla de categorías -->
+<?php if (empty($categorias)): ?>
+  <div class="card-ios p-4 text-center text-muted" style="font-size:.9rem;">Aún no hay categorías.</div>
+<?php else: ?>
+<div class="admin-grid">
+  <?php foreach ($categorias as $i => $c): ?>
+    <?php
+      $prevId = ($i > 0 && $categorias[$i - 1]['fijo'] == $c['fijo']) ? $categorias[$i - 1]['id'] : null;
+      $nextId = ($i < count($categorias) - 1 && $categorias[$i + 1]['fijo'] == $c['fijo']) ? $categorias[$i + 1]['id'] : null;
+    ?>
+    <article class="admin-card <?= $c['activo'] ? '' : 'admin-card--inactive' ?>">
+      <?php if ($c['imagen']): ?>
+        <div class="admin-card-media">
+          <img src="<?= htmlspecialchars(UPLOAD_URL . rawurlencode($c['imagen']), ENT_QUOTES, 'UTF-8') ?>" alt="">
       <?php else: ?>
-        <?php foreach ($categorias as $i => $c): ?>
-          <?php
-            $prevId = ($i > 0 && $categorias[$i - 1]['fijo'] == $c['fijo']) ? $categorias[$i - 1]['id'] : null;
-            $nextId = ($i < count($categorias) - 1 && $categorias[$i + 1]['fijo'] == $c['fijo']) ? $categorias[$i + 1]['id'] : null;
-          ?>
-          <tr>
-            <td>
-              <div class="d-flex flex-column align-items-center gap-1">
-                <input type="number" form="loteForm" name="ordenes[<?= (int)$c['id'] ?>]" value="<?= (int)$c['orden'] ?>" 
-                       class="form-control form-control-ios form-control-sm text-center" 
-                       style="width:55px; padding:2px; font-size:.8rem; font-weight:bold; margin-bottom: 2px;"
-                       min="1" step="1">
-                <div class="d-flex gap-1">
-                  <?php if ($prevId): ?>
-                    <form method="POST" class="m-0">
-                      <?= Auth::campoCSRF() ?>
-                      <input type="hidden" name="accion" value="mover_arriba">
-                      <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
-                      <input type="hidden" name="id_prev" value="<?= (int)$prevId ?>">
-                      <button type="submit" class="btn-order-arrow" title="Mover arriba">↑</button>
-                    </form>
-                  <?php else: ?>
-                    <span class="btn-order-arrow btn-order-arrow--disabled">↑</span>
-                  <?php endif; ?>
-                  <?php if ($nextId): ?>
-                    <form method="POST" class="m-0">
-                      <?= Auth::campoCSRF() ?>
-                      <input type="hidden" name="accion" value="mover_abajo">
-                      <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
-                      <input type="hidden" name="id_next" value="<?= (int)$nextId ?>">
-                      <button type="submit" class="btn-order-arrow" title="Mover abajo">↓</button>
-                    </form>
-                  <?php else: ?>
-                    <span class="btn-order-arrow btn-order-arrow--disabled">↓</span>
-                  <?php endif; ?>
-                </div>
-              </div>
-            </td>
-            <td>
-              <?php if ($c['imagen']): ?>
-                <img src="<?= htmlspecialchars(UPLOAD_URL . rawurlencode($c['imagen']), ENT_QUOTES, 'UTF-8') ?>"
-                     class="img-thumb" alt="">
-              <?php else: ?>
-                <div class="img-thumb d-flex align-items-center justify-content-center"
-                     style="background:var(--surface-2);color:var(--text-3);">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
-                  </svg>
-                </div>
-              <?php endif; ?>
-            </td>
-            <td class="fw-semibold"><?= htmlspecialchars($c['nombre'], ENT_QUOTES, 'UTF-8') ?></td>
-            <td><code style="font-size:.78rem;"><?= htmlspecialchars($c['slug'], ENT_QUOTES, 'UTF-8') ?></code></td>
-            <td>
-              <?php if ($c['activo']): ?>
-                <span class="badge" style="background:rgba(52,199,89,.15);color:#1a7a34;
-                      border-radius:var(--radius-pill);padding:.25rem .6rem;font-size:.75rem;">Activa</span>
-              <?php else: ?>
-                <span class="badge" style="background:rgba(255,59,48,.1);color:#c0392b;
-                      border-radius:var(--radius-pill);padding:.25rem .6rem;font-size:.75rem;">Inactiva</span>
-              <?php endif; ?>
-            </td>
-            <td>
-              <?php if ($c['fijo']): ?>
-                <span class="badge" style="background:rgba(255,149,0,.15);color:#b35900;
-                      border-radius:var(--radius-pill);padding:.25rem .6rem;font-size:.75rem;">📌 Fija</span>
-              <?php else: ?>
-                <span style="color:var(--text-3);font-size:.8rem;">—</span>
-              <?php endif; ?>
-            </td>
-            <td>
-              <div class="d-flex gap-2">
-                <a href="categorias.php?editar=<?= (int)$c['id'] ?>"
-                   class="btn-ios-secondary" style="text-decoration:none;padding:.35rem .7rem;font-size:.8rem;">
-                  Editar
-                </a>
-                <form method="POST" class="m-0">
-                  <?= Auth::campoCSRF() ?>
-                  <input type="hidden" name="accion" value="eliminar">
-                  <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
-                  <button type="submit" class="btn-ios-danger"
-                          style="padding:.35rem .7rem;font-size:.8rem;"
-                          data-confirm="¿Eliminar la categoría «<?= htmlspecialchars($c['nombre'], ENT_QUOTES, 'UTF-8') ?>»? Se eliminarán todos sus artículos.">
-                    Eliminar
-                  </button>
-                </form>
-              </div>
-            </td>
-          </tr>
-        <?php endforeach; ?>
+        <div class="admin-card-media admin-card-media--empty">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+          </svg>
       <?php endif; ?>
-    </tbody>
-  </table>
+          <?php if ($c['fijo']): ?>
+            <span class="admin-card-pin" title="Fija en inicio">📌</span>
+          <?php endif; ?>
+          <span class="admin-card-status <?= $c['activo'] ? 'is-active' : 'is-inactive' ?>">
+            <?= $c['activo'] ? 'Activa' : 'Inactiva' ?>
+          </span>
+        </div>
+
+        <div class="admin-card-body">
+          <h3 class="admin-card-title"><?= htmlspecialchars($c['nombre'], ENT_QUOTES, 'UTF-8') ?></h3>
+          <p class="admin-card-meta"><code><?= htmlspecialchars($c['slug'], ENT_QUOTES, 'UTF-8') ?></code></p>
+        </div>
+
+        <div class="admin-card-order">
+          <input type="number" form="loteForm" name="ordenes[<?= (int)$c['id'] ?>]" value="<?= (int)$c['orden'] ?>"
+                 class="form-control form-control-ios form-control-sm" min="1" step="1" aria-label="Orden">
+          <?php if ($prevId): ?>
+            <form method="POST" class="m-0">
+              <?= Auth::campoCSRF() ?>
+              <input type="hidden" name="accion" value="mover_arriba">
+              <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
+              <input type="hidden" name="id_prev" value="<?= (int)$prevId ?>">
+              <button type="submit" class="btn-order-arrow" title="Mover arriba">↑</button>
+            </form>
+          <?php else: ?>
+            <span class="btn-order-arrow btn-order-arrow--disabled">↑</span>
+          <?php endif; ?>
+          <?php if ($nextId): ?>
+            <form method="POST" class="m-0">
+              <?= Auth::campoCSRF() ?>
+              <input type="hidden" name="accion" value="mover_abajo">
+              <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
+              <input type="hidden" name="id_next" value="<?= (int)$nextId ?>">
+              <button type="submit" class="btn-order-arrow" title="Mover abajo">↓</button>
+            </form>
+          <?php else: ?>
+            <span class="btn-order-arrow btn-order-arrow--disabled">↓</span>
+          <?php endif; ?>
+        </div>
+
+        <div class="admin-card-actions">
+          <a href="categorias.php?editar=<?= (int)$c['id'] ?>" class="btn-ios-secondary" style="text-decoration:none;">
+            Editar
+          </a>
+          <form method="POST">
+            <?= Auth::campoCSRF() ?>
+            <input type="hidden" name="accion" value="eliminar">
+            <input type="hidden" name="id" value="<?= (int)$c['id'] ?>">
+            <button type="submit" class="btn-ios-danger"
+                    data-confirm="¿Eliminar la categoría «<?= htmlspecialchars($c['nombre'], ENT_QUOTES, 'UTF-8') ?>»? Se eliminarán todos sus artículos.">
+              Eliminar
+            </button>
+          </form>
+        </div>
+    </article>
+  <?php endforeach; ?>
 </div>
+<?php endif; ?>
 
 <?php require 'partials/footer.php'; ?>

@@ -76,8 +76,8 @@ $paginaActual = basename($_SERVER['PHP_SELF']);
       <line x1="3" y1="18" x2="21" y2="18"/>
     </svg>
   </button>
-  <img src="../public/assets/img/logo.png" alt="Logo"
-       style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
+  <img src="../public/assets/img/logo.png" alt="Logo" class="admin-logo-ring"
+       style="width:28px;height:28px;object-fit:cover;">
   <span class="fw-bold" style="font-size:.95rem;">Admin Catálogo</span>
   <span class="ms-auto text-muted" style="font-size:.8rem;">
     <?= htmlspecialchars($_SESSION['admin_nombre'] ?? '', ENT_QUOTES, 'UTF-8') ?>
